@@ -86,6 +86,18 @@ Windows 和 Linux 默认使用系统 webview，macOS 默认使用独立浏览器
 
 面向 agent：请遵循 [AGENTS.md](AGENTS.md)。
 
+## 引用
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```
+
 ## 许可证
 
 [MIT](LICENSE)

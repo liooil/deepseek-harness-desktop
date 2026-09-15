@@ -1,6 +1,6 @@
 # Agent Note: 以产物为先的 NPM 基线发布
 
-Status: rejected — npm 包发布方案已被仅公开发布桌面二进制的决策取代
+Status: rejected — superseded by 2026-08-10-npm-release-sequences: numbered versions and pack→protected publish shipped; timestamp versions were not adopted
 
 [English](2026-08-04-artifact-first-npm-baseline-publication.md) | 中文
 

@@ -1,12 +1,15 @@
-# Cross-platform confinement proofs for the desktop runtime. The matrix covers
-# bwrap, both shipped Landlock architectures, macOS Seatbelt, and the packed
-# distribution path used by standalone desktop builds.
+# Sandbox CI: the keyless real-kernel confinement proofs. This master-only
+# reference stays outside the pull-request verdict; rationale lives in
+# .agents/notes/implemented/process/2026-07-21-serial-cross-platform-ci-reference.md.
+# A separate workflow from ci.yml because the axis is different — these jobs
+# fan out over OS×runner (kernel capabilities), not node versions. The Landlock
+# launcher is built from native/system on each Landlock leg and installed
+# from the same tarballs the main-repository release workflow publishes.
 name: Sandbox
 
 on:
   push:
     branches: [master]
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,8 +31,8 @@ jobs:
   # rung; Landlock twice, once per architecture, each confining through the
   # locally built launcher), Seatbelt on macOS (sandbox-exec ships with
   # the OS). One node
-  # version only: kernel confinement does not vary by Node, while Desktop CI
-  # owns the repository and desktop-build checks.
+  # version only: kernel confinement does not vary by node, and ci.yml's
+  # node matrix already covers the node axis.
   #
   # The e2e files self-skip where their runner is absent, so a leg that lost
   # its runner (no bwrap, kernel without Landlock, macOS without
@@ -41,6 +44,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Only the bwrap leg has a Blacksmith equivalent: the earlier
+          # migration dispatch runs measured that Blacksmith's Linux images do
+          # not enforce Landlock (the run-guard would turn the leg red) and
+          # its macOS image is unverified, so those legs stay on GitHub's
+          # images under every failover value — see
+          # .agents/notes/implemented/process/2026-09-09-blacksmith-failover-leg.md.
           - os: ubuntu-latest
             runner: bwrap
           - os: ubuntu-24.04
@@ -50,7 +59,10 @@ jobs:
           - os: macos-latest
             runner: seatbelt
     name: sandbox e2e (${{ matrix.runner }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    runs-on: >-
+      ${{ matrix.runner == 'bwrap' && vars.DSH_CI_FAILOVER_LINUX == 'blacksmith'
+          && 'blacksmith-4vcpu-ubuntu-2404'
+          || matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -81,8 +93,8 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -yq musl-tools
-          pnpm --dir native/landlock-run run build:ts
-          pnpm --dir native/landlock-run run build:native
+          pnpm --dir native/system run build:ts
+          pnpm --dir native/system run build:native
 
       # The unit suite runs on ubuntu in `checks`; this is the one darwin leg
       # in the workflow, so run it here too — the platform-dependent unit
@@ -109,10 +121,10 @@ jobs:
           # the very platform that exists to prove it) is a failure, not a pass.
           echo "$out" | grep -qE 'Test Files[[:space:]]+2 passed \(2\)'
 
-      # Packed-install validation, Landlock legs only. Build the launcher on
-      # its native architecture, then install the local native and harness
-      # tarballs together so registry state cannot mask source/package drift.
-      - name: Build artifacts for packed-install validation
+      # Publish-path rehearsal, Landlock legs only. Build the launcher on its
+      # native architecture, then install the local native and harness tarballs
+      # together so registry state cannot mask source/package drift.
+      - name: Build packages for the pack rehearsal
         if: matrix.runner == 'landlock'
         run: pnpm run build:official
 

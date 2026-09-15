@@ -1,8 +1,10 @@
 {
   "name": "@deepseek-ai/dsh-agent-presets",
   "description": "Per-session agent composition from preset cordis.yml files for the DeepSeek Harness",
-  "version": "0.1.2-alpha.1",
-  "private": true,
+  "version": "0.1.5-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
@@ -23,6 +25,10 @@
     "./types": {
       "types": "./lib/types/types.d.ts",
       "default": "./lib/types/types.js"
+    },
+    "./display": {
+      "types": "./lib/types/display.d.ts",
+      "default": "./lib/types/display.js"
     },
     "./typert": {
       "types": "./lib/typert.host.d.ts",

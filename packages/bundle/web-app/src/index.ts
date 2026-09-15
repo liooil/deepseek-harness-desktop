@@ -21,11 +21,10 @@ import z from '@deepseek-ai/schemastery'
 import { addHarnessSourceSection } from '@deepseek-ai/dsh-app-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import * as FrontendStatic from '@deepseek-ai/dsh-host-frontend-static'
-import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
+import { launchedThroughSsh, launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-host-webserver'
-import { FIRST_PARTY_SECTION_ORDER } from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-shell-env'
 
 /** Stable Cordis plugin name. */
@@ -82,20 +81,11 @@ const LOOPBACK_HOST = '127.0.0.1'
 /** The webserver schema's all-interfaces bind literal. */
 const ALL_INTERFACES_HOST = '0.0.0.0'
 
-/** Whether this process was launched through SSH, including a forwarded-port session. */
-function launchedThroughSsh(ctx: Context): boolean {
-  const environment = launchEnvironmentOf(ctx)
-  return ['SSH_CONNECTION', 'SSH_TTY'].some((name) => {
-    const value = environment.getFrom(name, ['process'])?.value
-    return value !== undefined && value !== ''
-  })
-}
+const BROWSER_OPENER_MODULE = import.meta.resolve('open')
 
-function browserOpenerProgram(): string {
-  const browserOpenerModule = import.meta.resolve('open')
-  return `
+const BROWSER_OPENER_PROGRAM = `
 try {
-  const { default: open } = await import(${JSON.stringify(browserOpenerModule)})
+  const { default: open } = await import(${JSON.stringify(BROWSER_OPENER_MODULE)})
   const launcher = await open(process.argv[1])
   if (process.platform === 'win32') {
     // open resolves at PowerShell spawn; keep it referenced until that launcher hands the URL to Windows.
@@ -121,7 +111,6 @@ try {
   process.exitCode = 1
 }
 `
-}
 
 /**
  * Resolve one LAN-trust snapshot from the active server bind.
@@ -184,7 +173,7 @@ function resolveDistIndex(): string {
 function spawnBrowserLauncher(url: string): ChildProcess {
   return spawn(process.execPath, [
     '--input-type=module',
-    '--eval', browserOpenerProgram(),
+    '--eval', BROWSER_OPENER_PROGRAM,
     '--', url,
   ], {
     env: scrubbedParentEnv(),
@@ -235,24 +224,18 @@ export const internals: {
  */
 export function apply(ctx: Context, config: Config): void {
   const runtime = resolveLanTrust(ctx.webServer.host, config.trustedHosts)
-  const runtimePaths = ctx.get('dshRuntimePaths')
-  const distIndex = runtimePaths?.resolvePackageExport(
-    '@deepseek-ai/dsh-web-frontend',
-    'dist/index.html',
-  ) ?? internals.resolveDistIndex()
-  const harnessSourceRoot = runtimePaths?.harnessSourceRoot ?? SOURCE_ROOT
   // The loopback URL belongs to this host. Under SSH, the operator reaches it
   // through a local forwarding address that this process cannot derive.
-  const handoffBrowser = config.openBrowser && !launchedThroughSsh(ctx)
+  const handoffBrowser = config.openBrowser && !launchedThroughSsh(launchEnvironmentOf(ctx))
   // Release dependent rows only after bind-dependent trust has been sampled once.
   ctx.provide(WEB_RUNTIME_SERVICE, runtime)
-  ctx.plugin(FrontendStatic, { distIndex })
+  ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
   if (config.surfaceContext) {
     ctx.inject(['systemPrompt'], (promptCtx) => {
-      addHarnessSourceSection(promptCtx, harnessSourceRoot)
+      addHarnessSourceSection(promptCtx, SOURCE_ROOT)
       promptCtx.systemPrompt.section({
         name: 'app:web-surface',
-        order: FIRST_PARTY_SECTION_ORDER.WEB_SURFACE,
+        order: promptCtx.systemPrompt.getSectionOrder('WEB_SURFACE'),
         text: () => webSurfacePrompt(localWebUrl(promptCtx)),
       })
     })

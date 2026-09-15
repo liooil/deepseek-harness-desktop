@@ -70,7 +70,7 @@ with DeepSeekHarness(
 
 The [Python SDK tutorial](https://github.com/liooil/deepseek-harness-desktop/blob/master/docs/user/guide/python-sdk.md) provides an ordered local-build and first-run path without the Web UI. The [`jsonrpc-agent` example](https://github.com/liooil/deepseek-harness-desktop/blob/master/examples/jsonrpc-agent/README.md) owns the complete standalone Cordis file used there.
 
-The shipped `sdk-minimal` profile is a standalone explicit tree rather than an overlay on `dsh-base`. Select it with `profile="sdk-minimal"`; the ordinary `model` argument is the sole runtime model selection, including for model ids outside the adapter's advisory catalog. It provides persistent Bash, the string-replace editor, local execution, and JSONL sessions; settings, managed credentials, telemetry, Web tools, and the full default tool roster remain available through the separate full `sdk` and `web` profiles.
+The shipped `sdk-minimal` profile is a standalone explicit tree rather than an overlay on `dsh-base`. Select it with `profile="sdk-minimal"`; the ordinary `model` argument is the sole runtime model selection, including for model ids outside the adapter's advisory catalog. It provides only a platform-selected persistent shell, local execution, and JSONL sessions; filesystem tools, settings, managed credentials, telemetry, Web tools, and the full default tool roster remain available through the separate full `sdk` and `web` profiles.
 
 ## Results and notifications
 

@@ -45,14 +45,18 @@ With that entry point, success looks like a running app with every plugin active
 <a id="profiles"></a>
 ### Profiles
 
-A profile is how one dsh installation ships different app surfaces: `web`, `headless`, `acp`, `sdk`, and `sdk-minimal` start distinct compositions from the same launcher. A profile lives at `$DSH_HOME/profiles/<name>` and combines installable bundles, its own `cordis.patch.yml`, and `patchReload: live | startup`; omitted reload policy keeps the historical `live` default for custom profiles. The shipped `web` template uses live reload, while the other shipped templates apply patches only at startup. `sdk-minimal` names only its standalone bundle; the other templates retain base-plus-mode stacks. `dsh plugin` creates custom profiles, and a missing bundle or one without a patch declaration fails startup loudly.
+Import profile and bundle declaration types from [`@deepseek-ai/dsh-package-manifest`](../../util/package-manifest/README.md). App-boot adapts `DshPackageManifest` to `ProfileManifest` with optional package identity because local profiles need no published version. App-boot owns profile loading, JSON validation, and resolved runtime data.
+
+A profile is how one dsh installation ships different app surfaces: `web`, `headless`, `acp`, `sdk`, and `sdk-minimal` start distinct compositions from the same launcher. A profile lives at `$DSH_HOME/profiles/<name>` and combines installable bundles, its own `cordis.patch.yml`, and `patchReload: live | startup`; omitted reload policy keeps the historical `live` default for custom profiles. The shipped `web` template uses live reload, while the other shipped templates apply patches only at startup. `sdk-minimal` names only its standalone bundle; the other templates retain base-plus-mode stacks. `dsh --profile <name> --from-default-profile <template>` creates a custom profile at a new non-shipped name from one shipped template, while `dsh plugin` initializes a base-backed profile and manages its installed bundles. A missing bundle or one without a patch declaration fails startup loudly. Application-owned npm projects, such as Electron's reserved Desktop profile, use `loadProfileDirectory` to load an already initialized directory without exposing it through CLI profile lookup.
 
 Your machine-local preferences also live in the Harness home:
 
-- **`.env`** — your ordinary environment layers: the invoking directory's file outranks the Harness-home file, and both sit below the inherited environment. Variables that decide how the process starts (`PATH`, proxies, `DSH_*`, `XDG_*` and similar) are rejected from files: export them instead. For a non-product bin that just wants one directory's `.env`, a missing file is fine and an unloadable one prints one labelled warning line.
+- **`.env`** — your ordinary environment layers: the invoking directory's file outranks the Harness-home file, and both sit below the inherited environment. Variables that decide how the process starts (`PATH`, `DSH_*`, `XDG_*` and similar) are rejected from files: export them instead. The four proxy names (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`) are accepted from the Harness-home file only, never from the invoking directory's, which arrives with a clone. For a non-product bin that just wants one directory's `.env`, a missing file is fine and an unloadable one prints one labelled warning line.
 - **`cordis.patch.yml`** — your tweak layer, applied after every bundle layer (per-profile first, then the home-level file, which therefore outranks it): replace one entry's whole config (restating the fields you keep), insert new entries, or interpolate `!!js` expressions at boot. A patch naming an entry that does not exist prints a stderr warning; an empty or comments-only file fails boot — disable the layer with `[]` instead.
 
 Profiles with `patchReload: live` watch both user patch files: a valid edit recomposes without restart, while a rejected edit leaves the last good app running. A `startup` profile installs neither those watchers nor the launcher's watch-only HMR fallback.
+
+Inserted plugin names may be absolute filesystem paths, file URLs, or package specifiers. Patch loading converts absolute paths and patch-relative `./` or `../` paths to file URLs within `insert` rows and their nested groups; existing-entry name assertions and replacement `config` values remain literal.
 
 ### Previewing the effective configuration
 
@@ -94,23 +98,9 @@ The exports each own one stage of the boot: config resolution and snapshot repla
 
 | File | Role |
 |---|---|
-| `resolveConfigPath(path, snapshotMode, cwd?)` | Absolute config path; `snapshotMode === 'replay'` swaps a `cordis.yml`/`.yaml` basename for its sibling `cordis.snapshot.yml` |
-| `loadEnv(binName, dir?, warn?)` | Load the gitignored `.env` (Node `process.loadEnvFile`); absent file is fine, an unloadable one warns a single labelled line (default: stderr) |
-| `loadLayeredEnv(binName, cwd?, warn?)` | Build the product CLI's frozen inherited > project `.env` > user `.env` snapshot, reject bootstrap-only file variables, and materialize accepted file values without replacing inherited ones |
-| `installFailLoud(binName, proc?, release?)` | Turn an unhandled boot or later Loader rejection into one labelled stderr line + `exit(1)`; the optional `release` teardown is awaited between the two (bounded by `FAIL_LOUD_RELEASE_TIMEOUT_MS`) so a terminal-owning surface restores the terminal before exit; returns the uninstaller |
-| `FAIL_LOUD_RELEASE_TIMEOUT_MS` | How long `installFailLoud` waits for its `release` hook; a wedged disposer delays the fatal exit, never cancels it |
-| `assertEntriesLoaded(ctx, binName)` | Throw when a settled tree holds an enabled entry with no fiber, reporting every unresolved plugin name as a Cordis startup failure |
-| `assertEntriesActivated(ctx, binName)` | Include the `assertEntriesLoaded` check, then await every enabled entry after the Loader settles; throw with each failed plugin's original stack or each pending plugin's unresolved services |
-| `loadOptionalPatches(binName, file)` | Parse an optional patch-list file (a profile's `cordis.patch.yml`) — a top-level YAML array of include `PatchOptions` (id-targeted config overrides, `insert` lists, `!!js` allowed); absent file → `undefined`, an unreadable/unparsable/non-array file throws |
-| `loadOverlayPatches(binName, file)` | Parse a required top-level YAML array containing the same include `PatchOptions` entries described above; a missing file also throws because the caller named it |
-| `mountRootInclude(ctx, absoluteConfigPath, patches?, bareModuleBaseUrl?, bareModuleImporter?)` | Register the statically imported `cordis:include` and `cordis:group` builtins, mount the include, and retain the exact root entry used by user patch-layer HMR; an optional module base anchors bare package names to the installed host, while a compiled host can supply an importer instead; relative names stay config-relative |
-| `watchUserPatches(ctx, options)` | Register the named patch file with the existing Cordis HMR service; each add/change/removal transactionally recomposes the full patch list through the caller's `compose` closure (app-owned layers around the current user layer) and returns an async disposer |
-| `resolveProfileDir` / `initProfile` / `loadProfile` / `readProfileManifest` / `writeProfileManifest` / `resolveBundleDir` / `composeEntries` / `healProfilesModuleFallback` / `PROFILE_TEMPLATES` / `DEFAULT_PROFILE_BUNDLES` / `PROFILES_DIR` / `PROFILE_PATCH_FILENAME` | Profile machinery (see [Profiles](#profiles)) |
-| `boot(binName, absoluteConfigPath, patches?, prepare?, bareModuleBaseUrl?, bareModuleImporter?)` | Create the root context, expose `dshHomePath(...segments)` to Loader `!!js` config expressions, install Loader, run optional host preparation before config-tree entries mount (`prepare` may use Loader and provide launcher-owned context slots), then mount and await the include tree, assert entries loaded and activated, and return the root context — or dispose the partial context and reject a labelled error; the optional module base/importer has the same resolution semantics as `mountRootInclude` |
-| `DshRuntimePaths` / `ctx.dshRuntimePaths` | Optional packaged-host filesystem resolver for package manifests, exported client subpaths, and the model-visible harness source root; it is boot context data, not a Cordis service |
-| `renderConfigDump(binName, absoluteConfigPath, layers, warn?)` | Compose the base config and labeled overlay layers offline with the include's own parser and patch algorithm (`entryListSchema`/`applyEntryPatches`), so the result equals what `boot()` mounts, and render YAML with `!!js` expressions verbatim; each run of rows that shares one source file and the same patch layers is preceded by a `# ==` comment naming that file and those layers, keeping the output one loadable document; a patch matching no row goes to `warn` with its layer label (default: one stderr line), and read, parse, or field validation failures throw |
-| `addHarnessSourceSection(ctx, sourceRoot)` | Add a global `harness:source` prompt section (ordered just after the harness identity, before the persona) telling the agent the on-disk path to the DSH implementation checkout while warning it not to infer the current working directory from that path and to use `pwd` instead; a no-op returning `undefined` when the booted tree has no `systemPrompt` service. The section is registered against that service's fiber, so a dev HMR reload of the system prompt drops it until the next boot |
-| `HARNESS_SOURCE_SECTION` | The `'harness:source'` section name `addHarnessSourceSection` registers under |
+| [`src/index.ts`](src/index.ts) | Boot helpers: config resolution, environment loading, fail-loud guard, activation audit, patch parsing, config dump, harness-source section |
+| [`src/profile.ts`](src/profile.ts) | Profile discovery, initialization, bundle resolution, module fallback |
+| — | No runtime invariant companion is published; this presentation adapter owns no durable package-local event stream; boundary and replay tests cover its protocol mapping. |
 
 </details>
 
@@ -119,7 +109,7 @@ The exports each own one stage of the boot: config resolution and snapshot repla
 <a id="further-exploration"></a>
 ## Further Exploration
 
-Bare plugin specifiers in a config (`@deepseek-ai/dsh-*`, npm packages) resolve through the Cordis Loader's internal module loader. They resolve from the config directory by default; an installed closed runtime passes `bareModuleBaseUrl`, while a compiled closed runtime passes `bareModuleImporter`, to `boot` or `mountRootInclude` so its own plugin set remains authoritative. Relative specifiers always resolve against the config directory. Repository bins install Loader's optional `node-addon-require-builtin` peer; external callers must supply it or install plugins where plain Node import resolution can find them. The built `dsh-app-boot` artifact embeds the statically mounted Include implementation while leaving Loader external, so the include tree and host bind to one Loader peer. The `pnpm dsh` source path additionally maps manifest-declared workspace packages to their TypeScript source; its configuration gate requires every shipped raw/Web bare plugin to appear in the resolver manifest's `dependencies`.
+Read these pages when the package-level contract is not enough. They move from the shared boot mechanics to the composition model and the decision evidence behind it.
 
 - [Cordis primer](../../../docs/cordis-primer.md) — Loader, `!!js` config expressions, and include/group semantics.
 - [dsh app](../../../apps/cli/README.md) — the `dsh` bin that consumes these helpers.
@@ -128,6 +118,7 @@ Bare plugin specifiers in a config (`@deepseek-ai/dsh-*`, npm packages) resolve 
 - [dsh-home-paths](../../util/home-paths/README.md) — the Harness-home resolver (`resolveDshHome`).
 - [Configuration source ownership](../../../.agents/notes/implemented/architecture/2026-08-04-configuration-source-ownership.md) — why a discovered file may not decide bootstrap behavior.
 - [Profile plugin bundles](../../../.agents/notes/implemented/architecture/2026-08-05-profile-plugin-bundles.md) — the profile and bundle composition design.
+- [User-patch HMR tests](../../../.agents/notes/implemented/testing/2026-09-09-user-patch-hmr-test-delivery.md) — ownership of transaction behavior and native filesystem delivery.
 
 -----
 
@@ -138,7 +129,7 @@ Indirectly, through the loaded plugin tree, which alone contributes model contex
 
 #### KV Cache effect
 
-Boot itself invalidates nothing in the request prefix. A consumer that calls `addHarnessSourceSection` places one short line near the system prompt's head, before per-request content, so it does not invalidate the cache across turns; any other request-prefix change is owned by the named consumer.
+Boot itself changes no request prefix. `addHarnessSourceSection` places its source path after first-party reusable instructions, so different checkouts leave those preceding bytes unchanged when tools and configuration match. Provider cache reuse is not guaranteed.
 
 ## Known Limitations and Deferred Work
 

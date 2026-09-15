@@ -2,7 +2,7 @@
 
 English | [中文](development.zh.md)
 
-Follow the workflow for the contributor outcome you need: build runtime artifacts, validate the SDK, run against source, or build local wheel artifacts. Package behavior belongs in the [SDK reference](sdk/README.md) and [runtime carrier reference](sdk-runtime/README.md).
+Follow the workflow for the contributor outcome you need: build runtime artifacts, validate the SDK, run against source, or build distributions. Package behavior belongs in the [SDK reference](sdk/README.md) and [runtime carrier reference](sdk-runtime/README.md).
 
 ## Build runtime artifacts
 
@@ -13,7 +13,7 @@ pnpm install
 pnpm exec tsx scripts/build-exe-for-python-sdk.ts
 ```
 
-Use `--skip-build` when the required `lib/` artifacts already exist, or `--targets=node24-linux-x64,node24-linux-arm64,node24-macos-arm64,node24-win-x64` to select platforms. Build each target on its native architecture. Products land in `dist-exe/` and the script syncs the selected carriers into `python/sdk-runtime/`. Windows emits `.exe` and `-rg.exe`; macOS also syncs the matching spawn helper required by `node-pty`.
+Use `--skip-build` when the required `lib/` artifacts already exist, or `--targets=node24-linux-x64,node24-linux-arm64,node24-macos-arm64,node24-macos-x64,node24-win-x64` to select platforms. Build each target on its native architecture. Products land in `dist-exe/` and the script syncs the selected carriers into `python/sdk-runtime/`. Windows emits `.exe` and `-rg.exe`; macOS also syncs the matching spawn helper required by `node-pty`.
 
 ## Validate the SDK
 
@@ -27,16 +27,16 @@ uv run --project python/sdk pytest
 
 `python/sdk/tests/test_bundled_runtime.py` exercises available bundled carriers and skips a carrier when its artifact has not been built. For repository-wide test policy, see [Testing](../docs/testing.md).
 
-That suite drives fake runtime peers. `scripts/smoke-python-runtime.py` drives the packaged runtime instead. The required `python-runtime` CI job builds every published native target, installs the matching SDK and runtime wheels into a new Python 3.10 virtual environment, runs outside the checkout with `PYTHONPATH` and `DSH_RUNTIME_MODE` unset, proves that both modules and the executable came from those distributions, and then runs every keyless scenario. A focused local source-SDK run can select one built executable and scenario:
+That suite drives fake runtime peers. `scripts/smoke-python-runtime.py` drives the packaged runtime instead. The `python-runtime` CI jobs build Linux x64 and Windows x64 on pull requests, and Linux arm64 plus both macOS architectures on master pushes. Each selected target installs the matching SDK and runtime wheels into a new Python 3.10 virtual environment, runs outside the checkout with `PYTHONPATH` and `DSH_RUNTIME_MODE` unset, proves that both modules and the executable came from those distributions, and then runs every keyless scenario. A focused local source-SDK run can select one built executable and scenario:
 
 ```sh
 uv run --project python/sdk python scripts/smoke-python-runtime.py \
   --scenario sdk-minimal --exe dist-exe/deepseek-harness-sdk-runtime-macos-arm64
 ```
 
-Three scenarios compare committed expected output under `scripts/snapshots/python-sdk-single-exe/`. `minimal/model-visible.json` pins the Linux/macOS `sdk-minimal` profile's assembled system prompts, advertised tool schemas, and model-visible messages; `minimal/win-x64/model-visible.json` pins its PowerShell counterpart. A plugin that contributes an unintended system section or user message therefore fails the job, and every message the profile emits is compared. `advanced/` pins one complex process's SDK result and parent/child session logs across every target. `restart/` launches two complete SDK runtime processes against one persistence root and snapshots their isolated model histories, high-level results, and separate durable logs across every target. Rerun the owning scenario with `--update-snapshots` and review that diff before committing it.
+Four scenarios compare committed expected output under `scripts/snapshots/python-sdk-single-exe/`. `minimal/model-visible.json` pins the Linux/macOS `sdk-minimal` profile's assembled system prompts, advertised tool schemas, and model-visible messages; `minimal/win-x64/model-visible.json` pins its PowerShell counterpart. A plugin that contributes an unintended system section or user message therefore fails the job, and every message the profile emits is compared. `advanced/` pins one complex process's SDK result and parent/child session logs across every target. `restart/` launches two complete SDK runtime processes against one persistence root and snapshots their isolated model histories, high-level results, and separate durable logs across every target. `sdk-minimal-in-history` reuses the persistent-shell and editor scenario with a section that changes after the first successful shell call. `minimal-in-history/prompt-history.json` pins both prompt versions, the unchanged leading prompt in later requests, appended SDK system-message events, and `request/context.systemPromptUpdate`; tool schemas stay fixed and the editor file is checked independently. Rerun the owning scenario with `--update-snapshots` and review that diff before committing it.
 
-Trusted pull requests also run `--scenario sdk-live --installed-wheel` on every native target. That scenario performs two tool-using turns against `https://api.deepseek.com`, verifies the created file externally, and fails when the repository secret is absent instead of self-skipping. Fork and Dependabot pull requests run the complete keyless installed-wheel path but receive no key.
+Trusted pull requests and master pushes also run `--scenario sdk-live --installed-wheel` on each selected native target. That scenario performs two tool-using turns against `https://api.deepseek.com`: it checks the created file immediately, replaces its content with a host-only random challenge, and requires the second turn to copy the changed content into a fresh receipt without modifying the source. Both turns must complete with the exact sentinel answer and a model-requested tool call; external byte comparisons check the files. Missing repository secrets fail instead of self-skipping. Fork and Dependabot pull requests run the complete keyless installed-wheel path but receive no key.
 
 An interactive smoke test needs `DEEPSEEK_API_KEY` in the environment or repository-root `.env`:
 
@@ -58,9 +58,9 @@ Repository contributors can select either development route; both execute the no
 
 `python/sdk/tests/manual_sdk_agent_smoke.py` uses the internal `_launch_args` test adapter to exercise the unbuilt TypeScript CLI under tsx. Arbitrary argv replacement is intentionally absent from the public SDK.
 
-## Build local wheel artifacts
+## Build distributions
 
-The root `package.json` version is authoritative for both local Python wheel artifacts. The staging script injects that version into both wheels and pins the SDK to the same `deepseek-harness-runtime-bin` version. This fork does not publish either Python distribution to PyPI; end users should use the desktop binary from the [GitHub Releases](https://github.com/liooil/deepseek-harness-desktop/releases) page.
+The root `package.json` version is authoritative for both Python distributions. The staging script injects that version into both wheels and pins the SDK to the same `deepseek-harness-runtime-bin` version.
 
 Build the pure SDK wheel once and one runtime wheel on each native platform:
 
@@ -79,8 +79,12 @@ pip install \
   "dist-python/deepseek_harness_runtime_bin-$version-py3-none-macosx_14_0_arm64.whl"
 ```
 
-The runtime artifact is wheel-only. The local validation workflow builds three platform wheels alongside the pure SDK wheel: Linux x64, Linux arm64, and macOS 14 or newer on arm64. Prerelease repository versions such as `0.0.1-rc.1` use their normalized PEP 440 spelling, such as `0.0.1rc1`, inside local wheel filenames and metadata.
+The runtime distribution is wheel-only. The release pipeline publishes five platform wheels with the pure SDK wheel: Linux x64, Linux arm64, macOS 14 or newer on arm64 and x64, and Windows x64 (`win_amd64`). A `python-v<repository-version>` tag is accepted only when it matches the repository version; prerelease repository versions such as `0.0.1-rc.1` use their normalized PEP 440 spelling, such as `0.0.1rc1`, inside wheel filenames and metadata.
 
-## Validate local wheel artifacts
+## Validate a release candidate
 
-The `Build single-exe` workflow, and its CI callers, build all four wheels or the selected platform subset, install the Linux set on Python 3.10 and 3.14, check exact filenames and metadata, validate native deployment constraints, and retain the checked wheels as workflow artifacts. These jobs have no registry credentials and no publication job; the `build-exe` label or a manual workflow dispatch starts validation.
+Manually run the GitHub `Release (Python)` workflow with `publish=false` to build all six wheels, install the Linux release set on Python 3.10 and 3.14, check exact filenames and metadata, enforce PyPI's default per-file size limit, and retain one aggregate artifact with SHA-256 hashes. The run has no registry credentials; a dry run cannot enter either publication job.
+
+Public publication runs from the private automation repository. Package metadata points to the separate read-only public source mirror, which does not run release Actions. The private repository defines the repository variable `PYPI_PUBLISHER_REPOSITORY` as its own `owner/name` and keeps `PUBLIC_PYPI_RELEASE_ENABLED=false` except during an intentional release.
+
+Separate runtime and SDK jobs let an SDK upload failure resume without resending immutable runtime files. They accept `publish=true` only when the workflow runs from the configured publisher repository at the matching `python-v*` tag and the protected `pypi-runtime` and `pypi` environments approve the runtime and SDK jobs, respectively. PyPI Trusted Publishing still supplies short-lived OIDC credentials, but public attestations are disabled because they would disclose the private publisher identity.

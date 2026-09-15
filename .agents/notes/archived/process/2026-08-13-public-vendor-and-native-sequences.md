@@ -1,7 +1,7 @@
 # Agent Note: npm access per release sequence: the vendored framework and the native packages publish publicly
 
 Status: implemented
-Archived: 2026-08-21
+Archived: 2026-09-04
 
 English | [中文](2026-08-13-public-vendor-and-native-sequences.zh.md)
 
@@ -31,7 +31,7 @@ Access is a property of the package, not of a version: the twelve packages alrea
 
 ## Alternatives considered
 
-**Flip the whole scope public at once.** Rejected for now: it would make the next dsh release public as a side effect of a manifest change rather than a deliberate release decision. Opening the two dependency sequences first is the order that keeps every published package installable at each step, and it is the precondition for opening dsh whenever that is decided.
+**Flip the whole scope public at once.** Rejected: it would make a dsh release public as a side effect of a manifest change rather than a deliberate release decision. Opening the two dependency sequences first keeps every published package installable at each step and is a precondition for opening dsh.
 
 **Keep everything restricted and grant a read-only team instead.** `npm access grant read-only <org:team> <package>` is per-package with no scope wildcard, so covering the set means one grant per package plus a standing reconciliation job for every package added afterwards. It also only reaches organization members, which does not serve an installable public artifact.
 
