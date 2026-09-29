@@ -53,7 +53,6 @@ export function embeddedDshRuntimeVersion(): string | undefined {
 
 function resolveRuntime(): {
   installAnchor: string
-  shippedPresetRoot: string
   runtimePaths?: DshRuntimePaths
 } {
   const installAnchor = embeddedRuntime === undefined
@@ -73,7 +72,6 @@ function resolveRuntime(): {
   }
   return {
     installAnchor: resolvedInstallAnchor,
-    shippedPresetRoot: join(packageRoot, 'config', 'agent-presets'),
     ...(embeddedRuntime === undefined ? {} : { runtimePaths: {
       resolvePackageJson: packageName => join(nodeModulesRoot, ...packageName.split('/'), 'package.json'),
       resolvePackageExport: (packageName, subpath) => join(nodeModulesRoot, ...packageName.split('/'), subpath),
@@ -170,11 +168,8 @@ export async function startDshWeb(options: { cwd: string; port: number }): Promi
     patchFiles: [],
     args: ['--port', String(options.port), '--no-open'],
     installAnchor: runtime.installAnchor,
-    shippedPresetRoot: runtime.shippedPresetRoot,
     bareModuleImporter: importer,
     ...(runtime.runtimePaths === undefined ? {} : { runtimePaths: runtime.runtimePaths }),
-    watchPatches: false,
-    manageProcessSignals: false,
   })
   const webServer = ctx.get('webServer') as { port: number } | undefined
   if (webServer === undefined) {

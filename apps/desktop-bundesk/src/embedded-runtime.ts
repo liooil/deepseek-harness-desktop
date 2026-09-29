@@ -14,6 +14,7 @@ export interface EmbeddedDshRuntime {
 }
 
 let nativeRoot: string | undefined
+let extractedRuntimeRoot: string | undefined
 
 /**
  * Return whether a native asset has been copied out of Bun's read-only filesystem.
@@ -21,6 +22,26 @@ let nativeRoot: string | undefined
  */
 export function embeddedNativeRuntimeWasMaterialized(): boolean {
   return nativeRoot !== undefined
+}
+
+/**
+ * Copy the embedded runtime tree to a directory the operating system can read.
+ *
+ * Profile composition probes `node_modules` through `createRequire` and reads bundle patch
+ * files, neither of which reaches Bun's read-only virtual filesystem, so a compiled host
+ * runs its profiles against one extracted copy per process.
+ *
+ * @param runtime - embedded desktop asset root.
+ * @returns the runtime with an ordinary-filesystem root; the input outside standalone mode.
+ */
+export async function extractEmbeddedDshRuntime(runtime: EmbeddedDshRuntime): Promise<EmbeddedDshRuntime> {
+  if (!isBunVirtualPath(runtime.root)) return runtime
+  if (extractedRuntimeRoot === undefined) {
+    const root = mkdtempSync(join(tmpdir(), `dsh-desktop-runtime-${process.pid}-`))
+    copyRuntimeEntry(runtime.root, root, false)
+    extractedRuntimeRoot = root
+  }
+  return { root: extractedRuntimeRoot, version: runtime.version }
 }
 
 /**
@@ -66,6 +87,9 @@ export function materializeEmbeddedNativePathSync(
 
 /** Remove native files materialized by this process, when their OS handles permit it. */
 export async function disposeEmbeddedNativeRuntime(): Promise<void> {
+  const extracted = extractedRuntimeRoot
+  extractedRuntimeRoot = undefined
+  if (extracted !== undefined) await rm(extracted, { recursive: true, force: true, maxRetries: 3 })
   const root = nativeRoot
   nativeRoot = undefined
   if (root === undefined) return

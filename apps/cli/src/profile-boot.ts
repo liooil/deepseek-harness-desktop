@@ -28,6 +28,7 @@ import {
   PROFILE_PATCH_FILENAME,
   PROFILE_TEMPLATES,
   resolveProfileDir,
+  type DshRuntimePaths,
   type ProfileContext,
   type Profile,
   type RuntimeResolution,
@@ -164,9 +165,11 @@ export function initializeProfileFromDefault(
  * @returns the loaded profile.
  * @throws when explicit initialization names an unknown template or an existing profile.
  */
-export function prepareProfile(name: string, userLayer = true, fromDefaultProfile?: string): Profile {
+export function prepareProfile(
+  name: string, userLayer = true, fromDefaultProfile?: string, installAnchor = INSTALL_ANCHOR,
+): Profile {
   if (fromDefaultProfile !== undefined) initializeProfileFromDefault(name, fromDefaultProfile)
-  const profile = loadProfile(NAME, name, INSTALL_ANCHOR, undefined, { userLayer })
+  const profile = loadProfile(NAME, name, installAnchor, undefined, { userLayer })
   reportSkippedBundles(NAME, profile)
   writeFileSync(join(profile.dir, PROFILE_ROOT_FILENAME), PROFILE_ROOT_CONFIG)
   return profile
@@ -199,10 +202,12 @@ async function composeProfile(
   patchFiles: readonly string[],
   fromDefaultProfile?: string,
   resolvedProfile?: ResolvedProfileRuntime,
+  installAnchor?: string,
 ): Promise<ComposedProfile> {
-  const profile = resolvedProfile?.profile ?? prepareProfile(name, true, fromDefaultProfile)
+  const anchor = installAnchor ?? resolvedProfile?.installAnchor ?? INSTALL_ANCHOR
+  const profile = resolvedProfile?.profile ?? prepareProfile(name, true, fromDefaultProfile, anchor)
   if (resolvedProfile !== undefined) writeFileSync(join(profile.dir, PROFILE_ROOT_FILENAME), PROFILE_ROOT_CONFIG)
-  const resolutionOptions = { installAnchor: resolvedProfile?.installAnchor ?? INSTALL_ANCHOR, profile }
+  const resolutionOptions = { installAnchor: anchor, profile }
   const resolution = await createRuntimeResolution(resolutionOptions)
   const overlays = patchFiles.flatMap(file => loadOverlayPatches(NAME, resolve(file)))
   return { profile, resolution, overlays }
@@ -232,6 +237,18 @@ export interface RunProfileOptions {
   args: readonly string[]
   /** Application-owned package runtime, scoped to plugin package operations. */
   packageManager?: ProfileContext['packageManager']
+  /**
+   * Installed-host base for bare package names; overrides the resolved profile's anchor.
+   * A packaged application points it at its own extracted installation.
+   */
+  installAnchor?: string | undefined
+  /**
+   * Host importer for compiled bare package names. A packaged application whose plugins are
+   * compiled into its executable supplies the importer that maps a specifier to its module.
+   */
+  bareModuleImporter?: ((name: string) => unknown) | undefined
+  /** Packaged-host filesystem resolution for plugin and client assets, provided before entries mount. */
+  runtimePaths?: DshRuntimePaths | undefined
 }
 
 /**
@@ -263,7 +280,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
   })()
   try {
     const composed = await composeProfile(
-      options.profile, options.patchFiles, options.fromDefaultProfile, options.resolvedProfile,
+      options.profile, options.patchFiles, options.fromDefaultProfile, options.resolvedProfile, options.installAnchor,
     )
     const appReady = createAppReady()
     const shutdown = createProcessShutdown(dispose)
@@ -288,28 +305,36 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
       name: options.profile,
       ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
       dir: composed.profile.dir, patchPath: composed.profile.patchPath,
-      installAnchor: options.resolvedProfile?.installAnchor ?? INSTALL_ANCHOR,
+      installAnchor: options.installAnchor ?? options.resolvedProfile?.installAnchor ?? INSTALL_ANCHOR,
       startedBundles: composed.profile.layers.map(layer => layer.packageName),
       cwd: process.cwd(), home: resolveDshHome(),
       overlays: composed.overlays, telemetryDisabledEnv: process.env.DSH_TELEMETRY_DISABLED,
     }
-    const ctx = await boot(NAME, rootConfig, readProfilePatches(NAME, profileContext, composed.profile), async (hostCtx) => {
-      app.current = hostCtx
-      hostCtx.provide('profileContext', profileContext)
-      // Before any config-tree entry mounts, so plugins resolve all launch-time
-      // environment values from the same immutable launch snapshot.
-      hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, options.environment)
-      await hostCtx.plugin(PluginPackages, {
-        resolution: composed.resolution,
-      })
-      // The command line and bounded exit request are launcher facts available
-      // to every app plugin that injects the argument snapshot.
-      provideCmdline(hostCtx, {
-        args: options.args,
-        exit: code => void shutdown.shutdown(code),
-        ready: appReady.service,
-      })
-    })
+    const ctx = await boot(
+      NAME,
+      rootConfig,
+      readProfilePatches(NAME, profileContext, composed.profile),
+      async (hostCtx) => {
+        app.current = hostCtx
+        hostCtx.provide('profileContext', profileContext)
+        if (options.runtimePaths !== undefined) hostCtx.provide('dshRuntimePaths', options.runtimePaths)
+        // Before any config-tree entry mounts, so plugins resolve all launch-time
+        // environment values from the same immutable launch snapshot.
+        hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, options.environment)
+        await hostCtx.plugin(PluginPackages, {
+          resolution: composed.resolution,
+        })
+        // The command line and bounded exit request are launcher facts available
+        // to every app plugin that injects the argument snapshot.
+        provideCmdline(hostCtx, {
+          args: options.args,
+          exit: code => void shutdown.shutdown(code),
+          ready: appReady.service,
+        })
+      },
+      undefined,
+      options.bareModuleImporter,
+    )
     app.current = ctx
     if (!signalShutdown.signal.aborted
       && ctx.fiber.state === FiberState.ACTIVE

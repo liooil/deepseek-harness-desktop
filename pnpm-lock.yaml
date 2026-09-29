@@ -591,18 +591,12 @@ importers:
         specifier: ^8.21.0
         version: 8.21.0
     devDependencies:
-      '@deepseek-ai/dsh':
-        specifier: workspace:*
-        version: link:../cli
       '@deepseek-ai/dsh-app-boot':
         specifier: workspace:*
         version: link:../../packages/boot/app-boot
       '@deepseek-ai/dsh-atomic-write':
         specifier: workspace:*
         version: link:../../packages/util/atomic-write
-      '@deepseek-ai/dsh-attachment-local':
-        specifier: workspace:*
-        version: link:../../packages/attachment/attachment-local
       '@deepseek-ai/dsh-client-product-analytics':
         specifier: workspace:*
         version: link:../../packages/client/product-analytics
@@ -627,15 +621,6 @@ importers:
       '@deepseek-ai/dsh-home-paths':
         specifier: workspace:*
         version: link:../../packages/util/home-paths
-      '@deepseek-ai/dsh-lazy-require':
-        specifier: workspace:*
-        version: link:../../packages/util/lazy-require
-      '@deepseek-ai/dsh-ptc-runtime-node':
-        specifier: workspace:*
-        version: link:../../packages/ptc-runtime/ptc-runtime-node
-      '@deepseek-ai/dsh-tool-fs-search':
-        specifier: workspace:*
-        version: link:../../packages/fs/tool-fs-search
       '@deepseek-ai/node-addon-system':
         specifier: workspace:~
         version: link:../../native/system/packages/entry
@@ -666,9 +651,6 @@ importers:
       app-builder-lib:
         specifier: 26.15.3
         version: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
-      bundesk:
-        specifier: ^0.4.2
-        version: 0.4.2
       cos-nodejs-sdk-v5:
         specifier: 3.0.0
         version: 3.0.0
@@ -705,6 +687,49 @@ importers:
       vite:
         specifier: ^6.0.0
         version: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
+
+  apps/desktop-bundesk:
+    dependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../vendor/cordis
+      '@deepseek-ai/dsh':
+        specifier: workspace:*
+        version: link:../cli
+      '@deepseek-ai/dsh-app-boot':
+        specifier: workspace:*
+        version: link:../../packages/boot/app-boot
+      '@deepseek-ai/dsh-attachment-local':
+        specifier: workspace:*
+        version: link:../../packages/attachment/attachment-local
+      '@deepseek-ai/dsh-lazy-require':
+        specifier: workspace:*
+        version: link:../../packages/util/lazy-require
+      '@deepseek-ai/dsh-ptc-runtime-node':
+        specifier: workspace:*
+        version: link:../../packages/ptc-runtime/ptc-runtime-node
+      '@deepseek-ai/dsh-tool-fs-search':
+        specifier: workspace:*
+        version: link:../../packages/fs/tool-fs-search
+      bundesk:
+        specifier: ^0.4.2
+        version: 0.4.2
+    devDependencies:
+      '@types/bun':
+        specifier: ^1.4.0
+        version: 1.4.2
+      '@types/node':
+        specifier: ^22.20.0
+        version: 22.20.0
+      execa:
+        specifier: ^10.0.0
+        version: 10.0.0
+      sharp:
+        specifier: ^0.35.3
+        version: 0.35.3(@types/node@22.20.0)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   apps/desktop-host:
     dependencies:
@@ -17300,6 +17325,9 @@ packages:
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
+  '@types/bun@1.4.2':
+    resolution: {integrity: sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ==}
+
   '@types/cacheable-request@6.0.3':
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
 
@@ -18192,6 +18220,9 @@ packages:
   builtin-modules@3.3.0:
     resolution: {integrity: sha512-zhaCDicdLuWN5UbN5IMnFqNMhNfo919sH85y2/ea+5Yg9TsTkeZxpL+JLbp6cgYFS4sRLp3YV4S6yDuqVWHYOw==}
     engines: {node: '>=6'}
+
+  bun-types@1.4.2:
+    resolution: {integrity: sha512-bxV1FgK7yBIzjRe5zBozIM4Bem11ZJcCXSrjWRG3YWLt8yFDePu4cLjpebO8OvPeIE9trbyPF4fuj3Cia4Fj3w==}
 
   bundesk@0.4.2:
     resolution: {integrity: sha512-NGNNfeCaLYRpE/sZhpfMgPr0jStBf50v2FuxbtwlKrp9/9qR9oLdv4aZ6LGfLW92CSVxYdIVTxpVnagghnkjyw==}
@@ -24445,6 +24476,10 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 22.20.0
 
+  '@types/bun@1.4.2':
+    dependencies:
+      bun-types: 1.4.2
+
   '@types/cacheable-request@6.0.3':
     dependencies:
       '@types/http-cache-semantics': 4.2.0
@@ -25478,6 +25513,10 @@ snapshots:
       - supports-color
 
   builtin-modules@3.3.0: {}
+
+  bun-types@1.4.2:
+    dependencies:
+      '@types/node': 22.20.0
 
   bundesk@0.4.2:
     dependencies:
