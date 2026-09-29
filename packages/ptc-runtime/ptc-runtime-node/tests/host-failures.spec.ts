@@ -514,4 +514,21 @@ describe('Node runtime host failures', () => {
       else Object.defineProperty(process, 'pkg', prior)
     }
   })
+
+  it('caps the JavaScriptCore heap for a compiled Bun standalone instead of setting NODE_OPTIONS', async () => {
+    const h = await setup()
+    h.onBoot(() => { h.emit({ type: 'done' }) })
+    const prior = Object.getOwnPropertyDescriptor(globalThis, 'Bun')
+    try {
+      Object.defineProperty(globalThis, 'Bun', { configurable: true, value: { isStandaloneExecutable: true } })
+      expect((await h.start()).error).toBeUndefined()
+      const spec = h.spawn.mock.calls[0]?.[0]
+      expect(spec?.argv).toEqual([process.execPath, '134217728'])
+      expect(Object.fromEntries(Object.entries(spec?.env ?? {}).filter(([, value]) => value !== undefined)))
+        .toEqual({ DSH_PTC_RUNTIME_NODE: '1', BUN_JSC_forceRAMSize: String(512 * 1024 * 1024) })
+    } finally {
+      if (prior === undefined) Reflect.deleteProperty(globalThis, 'Bun')
+      else Object.defineProperty(globalThis, 'Bun', prior)
+    }
+  })
 })

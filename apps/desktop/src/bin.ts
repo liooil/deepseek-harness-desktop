@@ -82,7 +82,7 @@ async function runSmoke(web: DshWebSession): Promise<void> {
     await asset.body?.cancel()
   }))
   await web.verifyRuntime()
-  console.info(`dsh-desktop: smoke check passed (${web.url}; workers + sharp + ripgrep + terminal)`)
+  console.info(`dsh-desktop: smoke check passed (${web.url}; PTC program + sharp + ripgrep + terminal)`)
 }
 
 export async function runDesktop(argv: string[]): Promise<void> {

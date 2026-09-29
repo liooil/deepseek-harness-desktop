@@ -369,14 +369,6 @@ export async function runProgram(
   data: ProgramBootData,
   streams: { stdout: PatchableStream; stderr: PatchableStream },
 ): Promise<void> {
-  // Bun does not implement Worker.performance.eventLoopUtilization(). A
-  // periodic tick lets its host distinguish an awaited binding (the worker
-  // event loop remains responsive) from synchronous model code that wedges
-  // the thread. Node hosts ignore these messages and keep their exact ELU
-  // accounting.
-  const heartbeat = setInterval(() => { port.postMessage({ type: 'heartbeat' }) }, 25)
-  heartbeat.unref()
-  port.postMessage({ type: 'heartbeat' })
   const logs = new LogBuffer(
     data.maxOutputBytes,
     (text) => { port.postMessage({ type: 'log', text }) },
@@ -426,6 +418,5 @@ export async function runProgram(
       ...prepareException(error, logs.remainingOutputBytes(), data.maxOutputBytes),
     }
   }
-  clearInterval(heartbeat)
   port.postMessage(done)
 }

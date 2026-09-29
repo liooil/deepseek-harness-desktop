@@ -36,6 +36,16 @@ const requireNative = createLazyRequire<NativeModule>('native-package', import.m
 
 调用 `requireNative()` 时才加载依赖，并只加载一次。失败的加载不会被缓存。
 
+无法从文件系统解析该依赖的打包 Host 可以为该 specifier 注册自己的加载器：
+
+```ts
+import { configureLazyRequire } from '@deepseek-ai/dsh-lazy-require'
+
+configureLazyRequire('native-package', () => embeddedNativeModule)
+```
+
+未注册加载器的 specifier 仍使用 Node 的调用方相对 `require`。
+
 -----
 
 <a id="understand-the-implementation"></a>

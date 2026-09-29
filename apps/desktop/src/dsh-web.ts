@@ -1,26 +1,27 @@
 import { createRequire } from 'node:module'
-import { constants, existsSync, globSync } from 'node:fs'
-import { access, readFile, readdir } from 'node:fs/promises'
+import { constants, existsSync, globSync, readdirSync } from 'node:fs'
+import { access, readFile } from 'node:fs/promises'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { loadLayeredEnv, type DshRuntimePaths } from '@deepseek-ai/dsh-app-boot'
+import { configureLazyRequire } from '@deepseek-ai/dsh-lazy-require'
 import { runProfile } from '@deepseek-ai/dsh/profile-boot'
 import { detectImage } from '@deepseek-ai/dsh-attachment-local/src/image.ts'
-import { configureRipgrepPath, resolveRgPath } from '@deepseek-ai/dsh-tool-fs-search/src/search-core.ts'
-import { verifyWorkflowWorkerEntry } from '@deepseek-ai/dsh-workflow-worker-thread'
+import { configureRipgrepPath, resolveRgPath } from '@deepseek-ai/dsh-tool-fs-search'
 import { dlopen, FFIType } from 'bun:ffi'
+import loadEmbeddedSharp from '../generated/sharp-runtime.ts'
 import {
   disposeEmbeddedNativeRuntime,
   type EmbeddedDshRuntime,
   embeddedNativeRuntimeWasMaterialized,
   materializeEmbeddedNativePath,
+  materializeEmbeddedNativePathSync,
 } from './embedded-runtime.ts'
 import { shouldPreloadSharpLibrary } from './native-library.ts'
 
 let embeddedRuntime: EmbeddedDshRuntime | undefined
 let compiledPluginImporter: ((name: string) => unknown) | undefined
 let sharpNativeLibrary: ReturnType<typeof dlopen> | undefined
-let prepareSharpPromise: Promise<void> | undefined
 let sourceWorkspacePackages: Promise<Map<string, { root: string; manifest: WorkspaceManifest }>> | undefined
 
 interface WorkspaceManifest {
@@ -33,7 +34,7 @@ export interface DshWebSession {
   readonly url: URL
   readonly exited: Promise<number>
   readonly exitCode: number | null
-  /** Exercise Bun-hosted code and workflow worker threads without an LLM call. */
+  /** Exercise the packaged PTC program, sharp, ripgrep, and terminal without an LLM call. */
   verifyRuntime(): Promise<void>
   stop(): Promise<number>
 }
@@ -82,20 +83,25 @@ function resolveRuntime(): {
 }
 
 /**
- * Prepare Sharp's target-native dependencies when the first image operation needs them.
- * @returns settlement after the native library path is ready.
+ * Install the embedded Sharp factory as the module the Host loads for `sharp`.
+ * The compiled executable resolves no filesystem package for the native addon, so the
+ * Host supplies it: the first image operation materializes the embedded libvips, sets the
+ * dynamic-loader path, and loads the bundled factory, all without awaiting.
  */
-export function prepareEmbeddedSharpRuntime(): Promise<void> {
-  prepareSharpPromise ??= prepareSharp()
-  return prepareSharpPromise
+export function configureEmbeddedSharpRuntime(): void {
+  configureLazyRequire('sharp', () => {
+    prepareEmbeddedSharpRuntime()
+    return loadEmbeddedSharp()
+  })
 }
 
-async function prepareSharp(): Promise<void> {
-  if (embeddedRuntime === undefined) return
-  const nativeLibraryPath = await materializeEmbeddedNativePath(embeddedRuntime, join('native', 'sharp'))
+function prepareEmbeddedSharpRuntime(): void {
+  const runtime = embeddedRuntime
+  if (runtime === undefined) return
+  const nativeLibraryPath = materializeEmbeddedNativePathSync(runtime, join('native', 'sharp'))
   const key = process.platform === 'win32' ? 'PATH' : process.platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
   process.env[key] = [nativeLibraryPath, process.env[key]].filter(Boolean).join(delimiter)
-  const libraryName = (await readdir(nativeLibraryPath)).find(name => /vips.*\.(?:so(?:\.|$)|dylib$|dll$)/i.test(name))
+  const libraryName = readdirSync(nativeLibraryPath).find(name => /vips.*\.(?:so(?:\.|$)|dylib$|dll$)/i.test(name))
   if (libraryName === undefined) throw new Error(`dsh-desktop: libvips library is missing from ${nativeLibraryPath}`)
   if (shouldPreloadSharpLibrary(process.platform)) {
     sharpNativeLibrary ??= dlopen(join(nativeLibraryPath, libraryName), {
@@ -205,19 +211,16 @@ export async function startDshWeb(options: { cwd: string; port: number }): Promi
       return exitCode
     },
     async verifyRuntime() {
-      const codeRuntime = ctx.get('codeRuntime') as {
-        run(request: { program: string; bindings: unknown[] }): Promise<{ value?: unknown; error?: { message: string } }>
-      } | undefined
-      if (codeRuntime === undefined) throw new Error('desktop smoke: codeRuntime service is unavailable')
-      const codeResult = await codeRuntime.run({
+      const runtime = ctx.get('ptcRuntime')
+      if (runtime === undefined) throw new Error('desktop smoke: ptcRuntime service is unavailable')
+      const codeResult = await runtime.run(runtime.resolve({
         program: 'const answer: number = 6 * 7; return answer',
         bindings: [],
-      })
+      }))
       if (codeResult.error !== undefined || codeResult.value !== 42) {
-        throw new Error(`desktop smoke: code worker failed (${codeResult.error?.message ?? String(codeResult.value)})`)
+        throw new Error(`desktop smoke: PTC program failed (${codeResult.error?.message ?? String(codeResult.value)})`)
       }
 
-      await verifyWorkflowWorkerEntry()
       const png = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGD4DwABBAEAfbLI3wAAAABJRU5ErkJggg==', 'base64'))
       let image: Awaited<ReturnType<typeof detectImage>>
       try {

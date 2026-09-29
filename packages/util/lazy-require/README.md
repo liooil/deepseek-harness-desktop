@@ -36,6 +36,16 @@ const requireNative = createLazyRequire<NativeModule>('native-package', import.m
 
 Calling `requireNative()` loads the dependency once. A failed load is not cached.
 
+A packaged Host that cannot resolve the dependency from the filesystem registers its own loader for that specifier:
+
+```ts
+import { configureLazyRequire } from '@deepseek-ai/dsh-lazy-require'
+
+configureLazyRequire('native-package', () => embeddedNativeModule)
+```
+
+Specifiers without a registered loader keep Node's caller-relative `require`.
+
 -----
 
 <a id="understand-the-implementation"></a>

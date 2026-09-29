@@ -1,32 +1,30 @@
-import * as bundesk from 'bundesk'
 import { join } from 'node:path'
-import codeWorkerEntry from '../generated/code-worker.js' with { type: 'file' }
-import workflowWorkerEntry from '../generated/workflow-worker.js' with { type: 'file' }
-import { importDesktopPlugin } from '../generated/plugin-registry.ts'
-import { configureSharpLoader } from '@deepseek-ai/dsh-attachment-local/src/image.ts'
-import { configureCodeWorkerEntry } from '@deepseek-ai/dsh-code-runtime-worker-thread'
-import { configureWorkflowWorkerEntry } from '@deepseek-ai/dsh-workflow-worker-thread'
-import { runDesktop } from './bin.ts'
-import { configureEmbeddedDshRuntime, prepareEmbeddedSharpRuntime } from './dsh-web.ts'
-import { configureBundeskRuntime } from './window.ts'
 
 declare const DSH_DESKTOP_VERSION: string
 
-configureBundeskRuntime(bundesk)
-configureSharpLoader(async () => {
-  await prepareEmbeddedSharpRuntime()
-  return (await import('../generated/sharp-runtime.ts')).default
-})
-configureCodeWorkerEntry(String(codeWorkerEntry))
-configureWorkflowWorkerEntry(String(workflowWorkerEntry))
-configureEmbeddedDshRuntime({
-  root: join(import.meta.dir, 'dsh'),
-  version: DSH_DESKTOP_VERSION,
-}, importDesktopPlugin)
+if (process.env.DSH_PTC_RUNTIME_NODE === '1') {
+  // A compiled executable is its own program child: the PTC runtime re-runs this binary
+  // with only the frame limit, whose entry reads `process.argv[2]`. Load that entry alone
+  // so the child never initializes the desktop shell.
+  await import('@deepseek-ai/dsh-ptc-runtime-node/process')
+} else {
+  const bundesk = await import('bundesk')
+  const { importDesktopPlugin } = await import('../generated/plugin-registry.ts')
+  const { runDesktop } = await import('./bin.ts')
+  const { configureEmbeddedDshRuntime, configureEmbeddedSharpRuntime } = await import('./dsh-web.ts')
+  const { configureBundeskRuntime } = await import('./window.ts')
 
-try {
-  await runDesktop(Bun.argv.slice(2))
-} catch (error) {
-  console.error(`dsh-desktop: ${error instanceof Error ? error.message : String(error)}`)
-  process.exitCode = 1
+  configureBundeskRuntime(bundesk)
+  configureEmbeddedSharpRuntime()
+  configureEmbeddedDshRuntime({
+    root: join(import.meta.dir, 'dsh'),
+    version: DSH_DESKTOP_VERSION,
+  }, importDesktopPlugin)
+
+  try {
+    await runDesktop(Bun.argv.slice(2))
+  } catch (error) {
+    console.error(`dsh-desktop: ${error instanceof Error ? error.message : String(error)}`)
+    process.exitCode = 1
+  }
 }

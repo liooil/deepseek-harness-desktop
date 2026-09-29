@@ -11,6 +11,34 @@ export interface LaunchConfig {
   bootstrapPath?: string
 }
 
+/** A single-file executable host that re-runs itself as the program child. */
+interface StandaloneHost {
+  /** Bun's own compiled-executable flag, absent before it was added. */
+  isStandaloneExecutable?: boolean
+  /** Files Bun embedded into a compiled executable; empty in an interpreted host. */
+  embeddedFiles?: readonly unknown[]
+}
+
+/**
+ * Whether the current host is a single-file executable that re-runs itself as the PTC
+ * child: a `pkg`-packaged Node binary or a compiled Bun standalone. Such a host passes
+ * only the frame limit, and its own entry decides to run the program child from the
+ * environment {@link import('./index.ts')} adds.
+ * @returns true when the executable itself carries the program bootstrap.
+ */
+export function isPackagedHost(): boolean {
+  const bun = (globalThis as { Bun?: StandaloneHost }).Bun
+  return 'pkg' in process || bun?.isStandaloneExecutable === true || (bun?.embeddedFiles?.length ?? 0) > 0
+}
+
+/**
+ * Whether the current host is Bun rather than Node.
+ * @returns true when the runtime executes under Bun.
+ */
+export function isBunHost(): boolean {
+  return (globalThis as { Bun?: unknown }).Bun !== undefined
+}
+
 /**
  * Select explicit arguments without inheriting host loader or inspector flags.
  * @param fs - Filesystem mapping host bootstrap assets into the process world.
@@ -20,7 +48,7 @@ export interface LaunchConfig {
  */
 export function bootstrapArgs(fs: FileSystem, config: LaunchConfig, maxMessageBytes: number): string[] {
   if (config.bootstrapPath !== undefined) return [config.bootstrapPath, String(maxMessageBytes)]
-  if ('pkg' in process) return [String(maxMessageBytes)]
+  if (isPackagedHost()) return [String(maxMessageBytes)]
   const mapped = (path: string): string => {
     const result = fs.processPathFromHostPath(path)
     if (result === undefined) throw new Error(`PTC runtime bootstrap is unavailable in the subprocess execution world: ${path}`)

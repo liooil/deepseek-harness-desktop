@@ -14,7 +14,7 @@ import type {} from '@deepseek-ai/dsh-fs'
 import { snapshotJsonValue } from '@deepseek-ai/dsh-util-values'
 import { validateBindings } from './bindings.ts'
 import { JsonChannel } from './channel.ts'
-import { bootstrapArgs } from './launch.ts'
+import { bootstrapArgs, isBunHost, isPackagedHost } from './launch.ts'
 import type { LaunchConfig } from './launch.ts'
 import { OutputLedger } from './output-ledger.ts'
 import { drainOutput } from './output-stream.ts'
@@ -30,7 +30,7 @@ export interface Config extends LaunchConfig {
   maxTimeoutMs?: number
   /** Combined serialized logs, completion and diagnostic byte cap. */
   maxOutputBytes?: number
-  /** V8 old-generation heap limit in MiB; native allocations are excluded. */
+  /** V8 old-generation heap limit in MiB; native allocations are excluded. A Bun host caps its JavaScriptCore heap instead. */
   maxOldGenerationSizeMb?: number
   /** Maximum control frame, outstanding argument and queued control-output bytes. */
   maxMessageBytes?: number
@@ -218,7 +218,7 @@ export class NodePtcRuntime extends PtcRuntime {
       // Abort callbacks can settle execution before or during an awaited operation.
       // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (settled) return await result.promise
-      const packaged = 'pkg' in process && this.config.bootstrapPath === undefined
+      const packaged = isPackagedHost() && this.config.bootstrapPath === undefined
       const heapFlag = `--max-old-space-size=${this.config.maxOldGenerationSizeMb}`
       const argv = [executable, ...packaged ? [] : [heapFlag], ...bootstrapArgs(this.ctx.fs, this.config, this.config.maxMessageBytes)]
       confined = policy.mode === 'danger-full-access' ? undefined : await this.ctx.sandbox.confine(argv, { ...policy, mode: policy.mode }, signal)
@@ -231,7 +231,10 @@ export class NodePtcRuntime extends PtcRuntime {
         .map(key => [key, undefined]))
       if (packaged) {
         env.DSH_PTC_RUNTIME_NODE = '1'
-        env.NODE_OPTIONS = heapFlag
+        // V8 reads its heap bound from NODE_OPTIONS; Bun ignores that variable and caps
+        // JavaScriptCore through BUN_JSC_forceRAMSize, expressed in bytes.
+        if (isBunHost()) env.BUN_JSC_forceRAMSize = String(this.config.maxOldGenerationSizeMb * 1024 * 1024)
+        else env.NODE_OPTIONS = heapFlag
       }
       handle = this.ctx.subprocess.spawn({ argv: confined?.argv ?? argv, cwd: spec.cwd, env, stdio: { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', control: 'pipe' }, graceMs: this.config.graceMs, signal })
       const launched = handle

@@ -37,11 +37,6 @@ interface BunDeskBuildRuntime {
   buildDesktopApp(config: Record<string, unknown>): Promise<{ outfile: string; size: number; sha256: string }>
 }
 
-interface BunBuildResult {
-  readonly success: boolean
-  readonly logs: unknown[]
-}
-
 interface BunPluginBuilder {
   onLoad(
     options: { filter: RegExp },
@@ -52,10 +47,6 @@ interface BunPluginBuilder {
 interface BunBuildPlugin {
   readonly name: string
   setup(builder: BunPluginBuilder): void
-}
-
-declare const Bun: {
-  build(options: Record<string, unknown>): Promise<BunBuildResult>
 }
 
 class DesktopTarget {
@@ -147,39 +138,28 @@ class DesktopExecutableBuild {
     await this.discoverRuntimeClosure()
     await this.generatePluginRegistry()
     await this.generateSharpRuntime()
-    await this.generateWorkerBundles()
     await this.stageRuntimeData()
     await this.compile()
   }
 
+  /**
+   * Emit the Sharp factory the desktop loads after materializing the embedded native
+   * library. The module resolves the bundled dependency through Bun's CommonJS loader, so
+   * the import stays lazy: the addon loads on the first image operation, not at startup.
+   */
   private async generateSharpRuntime(): Promise<void> {
     const platform = this.cli.target.platform === 'windows' ? 'win32' : this.cli.target.platform === 'macos' ? 'darwin' : 'linux'
     await mkdir(GENERATED_DIR, { recursive: true })
     await writeFile(join(GENERATED_DIR, 'sharp-runtime.ts'), [
-      "import sharp from 'sharp'",
-      'export default sharp',
+      '/** Load the bundled Sharp factory; the desktop materializes its native library first. */',
+      'declare const require: (specifier: string) => unknown',
+      '',
+      "export default function loadEmbeddedSharp(): typeof import('sharp')['default'] {",
+      "  return require('sharp') as typeof import('sharp')['default']",
+      '}',
       '',
     ].join('\n'))
     console.log(`build-desktop-executable: generated native sharp entry for ${platform}-${this.cli.target.arch}`)
-  }
-
-  private async generateWorkerBundles(): Promise<void> {
-    await mkdir(GENERATED_DIR, { recursive: true })
-    for (const [name, entrypoint] of [
-      ['code-worker.js', 'packages/code-runtime/code-runtime-worker-thread/src/worker.ts'],
-      ['workflow-worker.js', 'packages/workflow/workflow-worker-thread/src/worker.ts'],
-    ] as const) {
-      const result = await Bun.build({
-        entrypoints: [resolve(root, entrypoint)],
-        outdir: GENERATED_DIR,
-        naming: name,
-        target: 'bun',
-        format: 'esm',
-        minify: true,
-      })
-      if (!result.success) throw new AggregateError(result.logs, `failed to bundle ${entrypoint}`)
-    }
-    console.log('build-desktop-executable: generated embedded code and workflow workers')
   }
 
   /**

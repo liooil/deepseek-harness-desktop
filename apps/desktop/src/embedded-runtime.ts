@@ -1,7 +1,6 @@
 /** Read-only Bun executable assets with on-demand native-file materialization. */
 
-import { constants } from 'node:fs'
-import { access, chmod, lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rm, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, normalize } from 'node:path'
 
@@ -13,14 +12,14 @@ export interface EmbeddedDshRuntime {
   readonly version: string
 }
 
-let nativeRootPromise: Promise<string> | undefined
+let nativeRoot: string | undefined
 
 /**
  * Return whether a native asset has been copied out of Bun's read-only filesystem.
  * @returns whether this process has requested its native temporary directory.
  */
 export function embeddedNativeRuntimeWasMaterialized(): boolean {
-  return nativeRootPromise !== undefined
+  return nativeRoot !== undefined
 }
 
 /**
@@ -33,27 +32,42 @@ export function embeddedNativeRuntimeWasMaterialized(): boolean {
  * @param runtime - embedded desktop asset root.
  * @param relativePath - slash-independent path below the runtime root.
  * @param executable - whether the copied leaf must be executable.
- * @returns the source path outside standalone mode, or the temporary native path.
+ * @returns a promise for the source path outside standalone mode, or the temporary native path.
  */
-export async function materializeEmbeddedNativePath(
+export function materializeEmbeddedNativePath(
   runtime: EmbeddedDshRuntime,
   relativePath: string,
   executable = false,
 ): Promise<string> {
+  return Promise.resolve().then(() => materializeEmbeddedNativePathSync(runtime, relativePath, executable))
+}
+
+/**
+ * Return a native runtime asset as an operating-system path without deferring the copy.
+ * A synchronous module loader — the compiled Host's Sharp factory — cannot await the
+ * temporary-directory copy, so it materializes the asset in place.
+ * @param runtime - embedded desktop asset root.
+ * @param relativePath - slash-independent path below the runtime root.
+ * @param executable - whether the copied leaf must be executable.
+ * @returns the source path outside standalone mode, or the temporary native path.
+ */
+export function materializeEmbeddedNativePathSync(
+  runtime: EmbeddedDshRuntime,
+  relativePath: string,
+  executable = false,
+): string {
   const source = runtimePath(runtime, relativePath)
   if (!isBunVirtualPath(source)) return source
-  const nativeRoot = await resolveNativeRoot()
-  const destination = join(nativeRoot, relativePath)
-  await copyRuntimeEntry(source, destination, executable)
+  const destination = join(resolveNativeRoot(), relativePath)
+  copyRuntimeEntry(source, destination, executable)
   return destination
 }
 
 /** Remove native files materialized by this process, when their OS handles permit it. */
 export async function disposeEmbeddedNativeRuntime(): Promise<void> {
-  const pending = nativeRootPromise
-  nativeRootPromise = undefined
-  if (pending === undefined) return
-  const root = await pending
+  const root = nativeRoot
+  nativeRoot = undefined
+  if (root === undefined) return
   try {
     await rm(root, { recursive: true, force: true, maxRetries: 3 })
   } catch (error) {
@@ -78,27 +92,25 @@ function isBunVirtualPath(path: string): boolean {
   return path.startsWith('/$bunfs/') || path.includes(':\\~BUN\\') || path.includes(':/~BUN/')
 }
 
-function resolveNativeRoot(): Promise<string> {
-  nativeRootPromise ??= mkdtemp(join(tmpdir(), `dsh-desktop-native-${process.pid}-`))
-  return nativeRootPromise
+function resolveNativeRoot(): string {
+  nativeRoot ??= mkdtempSync(join(tmpdir(), `dsh-desktop-native-${process.pid}-`))
+  return nativeRoot
 }
 
-async function copyRuntimeEntry(source: string, destination: string, executable: boolean): Promise<void> {
-  const sourceStat = await lstat(source)
+function copyRuntimeEntry(source: string, destination: string, executable: boolean): void {
+  const sourceStat = lstatSync(source)
   if (sourceStat.isSymbolicLink()) throw new Error(`dsh-desktop: embedded native asset is a symbolic link: ${source}`)
   if (sourceStat.isDirectory()) {
-    await mkdir(destination, { recursive: true, mode: 0o700 })
-    for (const entry of await readdir(source, { withFileTypes: true })) {
-      await copyRuntimeEntry(join(source, entry.name), join(destination, entry.name), false)
+    mkdirSync(destination, { recursive: true, mode: 0o700 })
+    for (const entry of readdirSync(source, { withFileTypes: true })) {
+      copyRuntimeEntry(join(source, entry.name), join(destination, entry.name), false)
     }
     return
   }
   if (!sourceStat.isFile()) throw new Error(`dsh-desktop: embedded native asset is not a regular file: ${source}`)
-  await mkdir(dirname(destination), { recursive: true, mode: 0o700 })
-  try {
-    await access(destination, constants.F_OK)
-  } catch {
-    await writeFile(destination, await readFile(source), { mode: executable ? 0o700 : 0o600 })
+  mkdirSync(dirname(destination), { recursive: true, mode: 0o700 })
+  if (!existsSync(destination)) {
+    writeFileSync(destination, readFileSync(source), { mode: executable ? 0o700 : 0o600 })
   }
-  if (executable && process.platform !== 'win32') await chmod(destination, 0o700)
+  if (executable && process.platform !== 'win32') chmodSync(destination, 0o700)
 }
