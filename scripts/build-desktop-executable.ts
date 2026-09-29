@@ -189,7 +189,9 @@ class DesktopExecutableBuild {
       }
       await copyWorkspacePath('package.json')
       const patch = manifest.dsh?.bundle?.patch
-      if (patch !== undefined) await copyWorkspacePath(patch)
+      for (const entry of patch === undefined ? [] : typeof patch === 'string' ? [patch] : patch) {
+        await copyWorkspacePath(entry)
+      }
       if (manifest.dsh?.client !== undefined) {
         const clientEntry = resolvePackageEntry(manifest, 'client')
         if (clientEntry === undefined) throw new Error(`build-desktop-executable: ${name} declares dsh.client without a client export`)
@@ -491,7 +493,7 @@ interface WorkspaceManifest {
   readonly optionalDependencies?: Record<string, string>
   readonly peerDependencies?: Record<string, string>
   readonly dsh?: {
-    readonly bundle?: { readonly patch?: string }
+    readonly bundle?: { readonly patch?: string | readonly string[] }
     readonly client?: unknown
   }
 }
