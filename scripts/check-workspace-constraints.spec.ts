@@ -255,6 +255,19 @@ describe('dsh family version coherence', () => {
 })
 
 describe('package payload constraints', () => {
+  it.each(['apps/desktop', 'apps/desktop-bundesk'])('exempts the packaged application %s from release membership', (dir) => {
+    const errors = checkWorkspaceManifest({ dir, manifest: { name: '@deepseek-ai/dsh-desktop-probe', version: '0.2.0-rc.1' } })
+    expect(errors.filter(message => message.includes('release member') || message.includes('publication files policy'))).toEqual([])
+  })
+
+  it('still requires an ordinary application package to publish its payload policy', () => {
+    const errors = checkWorkspaceManifest({ dir: 'apps/probe', manifest: { name: '@deepseek-ai/dsh-desktop-probe', version: '0.2.0-rc.1', private: true } })
+    expect(errors).toEqual(expect.arrayContaining([
+      expect.stringContaining('release member must not set "private": true'),
+      expect.stringContaining('app package has no publication files policy'),
+    ]))
+  })
+
   it.each(['./art/icon.svg', 'art/icon.svg'])('includes declared icon %s in the canonical payload', (icon) => {
     expect(expectedDshPackageFiles({ icon, exports: { './locale/*.json': './locale/*.json' } })).toEqual([
       'art/icon.svg', 'locale/*.json', 'lib/index.js', 'lib/types/**/*.d.ts',

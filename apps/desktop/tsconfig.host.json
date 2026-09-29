@@ -9,22 +9,10 @@
   ],
   "references": [
     {
-      "path": "../cli"
-    },
-    {
-      "path": "../../packages/attachment/attachment-local"
-    },
-    {
       "path": "../../packages/boot/app-boot"
     },
     {
-      "path": "../../packages/fs/tool-fs-search"
-    },
-    {
       "path": "../../packages/util/home-paths"
-    },
-    {
-      "path": "../../packages/util/lazy-require"
     },
     {
       "path": "../../packages/credentials/deepseek-account"

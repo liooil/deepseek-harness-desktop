@@ -10,7 +10,7 @@ import { parseArgs } from 'node:util'
 
 const root = resolve(import.meta.dirname, '..')
 const OUT_DIR = resolve(root, 'dist-desktop')
-const GENERATED_DIR = resolve(root, 'apps/desktop/generated')
+const GENERATED_DIR = resolve(root, 'apps/desktop-bundesk/src/generated')
 const GENERATED_PLUGIN_REGISTRY = join(GENERATED_DIR, 'plugin-registry.ts')
 const CLI_PACKAGE = '@deepseek-ai/dsh'
 
@@ -41,6 +41,10 @@ interface BunPluginBuilder {
   onLoad(
     options: { filter: RegExp },
     loader: () => { contents: string; loader: 'js' },
+  ): void
+  onResolve(
+    options: { filter: RegExp },
+    resolve: () => { path: string },
   ): void
 }
 
@@ -338,18 +342,18 @@ class DesktopExecutableBuild {
 
   private async compile(): Promise<void> {
     const version = (JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8')) as { version: string }).version
-    const require = createRequire(resolve(root, 'apps/desktop/package.json'))
+    const require = createRequire(resolve(root, 'apps/desktop-bundesk/package.json'))
     const bundeskEntry = require.resolve('bundesk')
     const bundesk = await import(pathToFileURL(bundeskEntry).href) as BunDeskBuildRuntime
     await mkdir(OUT_DIR, { recursive: true })
     await rm(this.cli.target.output, { force: true })
     const result = await bundesk.buildDesktopApp({
       root,
-      entrypoint: 'apps/desktop/src/standalone.ts',
+      entrypoint: 'apps/desktop-bundesk/src/standalone.ts',
       outfile: this.cli.target.output,
       target: this.cli.target.bunTarget,
       minify: true,
-      plugins: [this.sharpBindingPlugin(), this.koffiBindingPlugin()],
+      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin()],
       define: {
         DSH_DESKTOP_VERSION: JSON.stringify(version),
       },
@@ -391,6 +395,20 @@ class DesktopExecutableBuild {
           contents: `import binding from ${JSON.stringify(addonPath)}; export default binding`,
           loader: 'js',
         }))
+      },
+    }
+  }
+
+  /**
+   * Replace Node's single-executable-application module, which Bun does not implement.
+   * `onLoad` cannot intercept a `node:` builtin, so the shim resolves the specifier instead.
+   */
+  private nodeSeaPlugin(): BunBuildPlugin {
+    const shim = resolve(root, 'apps/desktop-bundesk/src/node-sea-shim.ts')
+    return {
+      name: 'dsh-desktop-node-sea',
+      setup(builder) {
+        builder.onResolve({ filter: /^node:sea$/ }, () => ({ path: shim }))
       },
     }
   }

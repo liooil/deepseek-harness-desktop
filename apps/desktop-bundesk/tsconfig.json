@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "lib/types",
+    "types": ["node", "bun"]
+  },
+  "include": ["src", "tests"],
+  "references": [
+    {
+      "path": "../../packages/boot/app-boot"
+    },
+    {
+      "path": "../../packages/util/lazy-require"
+    },
+    {
+      "path": "../../packages/attachment/attachment-local"
+    },
+    {
+      "path": "../../packages/fs/tool-fs-search"
+    },
+    {
+      "path": "../cli"
+    }
+  ]
+}

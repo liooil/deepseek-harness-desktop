@@ -9,7 +9,7 @@ if (process.env.DSH_PTC_RUNTIME_NODE === '1') {
   await import('@deepseek-ai/dsh-ptc-runtime-node/process')
 } else {
   const bundesk = await import('bundesk')
-  const { importDesktopPlugin } = await import('../generated/plugin-registry.ts')
+  const { importDesktopPlugin } = await import('./generated/plugin-registry.ts')
   const { runDesktop } = await import('./bin.ts')
   const { configureEmbeddedDshRuntime, configureEmbeddedSharpRuntime } = await import('./dsh-web.ts')
   const { configureBundeskRuntime } = await import('./window.ts')

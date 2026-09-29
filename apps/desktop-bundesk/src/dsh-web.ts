@@ -9,7 +9,7 @@ import { runProfile } from '@deepseek-ai/dsh/profile-boot'
 import { detectImage } from '@deepseek-ai/dsh-attachment-local/src/image.ts'
 import { configureRipgrepPath, resolveRgPath } from '@deepseek-ai/dsh-tool-fs-search'
 import { dlopen, FFIType } from 'bun:ffi'
-import loadEmbeddedSharp from '../generated/sharp-runtime.ts'
+import loadEmbeddedSharp from './generated/sharp-runtime.ts'
 import {
   disposeEmbeddedNativeRuntime,
   type EmbeddedDshRuntime,

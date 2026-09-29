@@ -531,4 +531,50 @@ describe('Node runtime host failures', () => {
       else Object.defineProperty(globalThis, 'Bun', prior)
     }
   })
+
+  it('strips program types with the Bun transformer when the host provides one', async () => {
+    const h = await setup()
+    const seen: string[] = []
+    h.onBoot(() => { h.emit({ type: 'done' }) })
+    const prior = Object.getOwnPropertyDescriptor(globalThis, 'Bun')
+    try {
+      Object.defineProperty(globalThis, 'Bun', {
+        configurable: true,
+        value: {
+          Transpiler: class {
+            transformSync(source: string): string {
+              seen.push(source)
+              return 'async function __dsh_program__() {\nreturn 7\n}'
+            }
+          },
+        },
+      })
+      expect((await h.start()).error).toBeUndefined()
+      expect(seen).toEqual(['async function __dsh_program__() {\nreturn 1\n}'])
+      expect(h.spawn).toHaveBeenCalled()
+    } finally {
+      if (prior === undefined) Reflect.deleteProperty(globalThis, 'Bun')
+      else Object.defineProperty(globalThis, 'Bun', prior)
+    }
+  })
+
+  it('reports a Bun transform that loses the program wrapper as a program failure', async () => {
+    const h = await setup()
+    h.onBoot(() => { h.emit({ type: 'done' }) })
+    const prior = Object.getOwnPropertyDescriptor(globalThis, 'Bun')
+    try {
+      Object.defineProperty(globalThis, 'Bun', {
+        configurable: true,
+        value: { Transpiler: class { transformSync(): string { return 'not a program' } } },
+      })
+      expect((await h.start()).error).toEqual({
+        kind: 'exception',
+        message: 'ptc-runtime-node: the Bun transform lost the program wrapper',
+      })
+      expect(h.spawn).not.toHaveBeenCalled()
+    } finally {
+      if (prior === undefined) Reflect.deleteProperty(globalThis, 'Bun')
+      else Object.defineProperty(globalThis, 'Bun', prior)
+    }
+  })
 })

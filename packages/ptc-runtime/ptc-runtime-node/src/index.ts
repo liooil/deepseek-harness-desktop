@@ -1,5 +1,4 @@
 /** Confined Node programs with host-owned bindings, output limits, and managed process cleanup. */
-import { stripTypeScriptTypes } from 'node:module'
 import { isAbsolute } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
@@ -47,6 +46,37 @@ const STRIP_SUFFIX = '\n}'
 
 function messageOf(error: unknown): string { return error instanceof Error ? error.message : String(error) }
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }
+
+/** The Bun host's TypeScript transform, absent from Node. */
+interface BunTranspilerHost {
+  Transpiler: new (options: { loader: 'ts'; target: 'bun' }) => { transformSync(source: string): string }
+}
+
+/**
+ * Strip the program's types with the running host's own transformer.
+ *
+ * Bun's `node:module` carries no `stripTypeScriptTypes`, and a static import of that
+ * missing named export fails before any program runs, so the Node path loads the module
+ * dynamically and Bun uses its own transpiler.
+ *
+ * @param program - program source without the statement wrapper.
+ * @returns the wrapped program body with its types removed.
+ */
+async function stripProgramTypes(program: string): Promise<string> {
+  const wrapped = STRIP_PREFIX + program + STRIP_SUFFIX
+  const Transpiler = (globalThis as { Bun?: BunTranspilerHost }).Bun?.Transpiler
+  if (Transpiler !== undefined) {
+    const transformed = new Transpiler({ loader: 'ts', target: 'bun' }).transformSync(wrapped)
+    const bodyStart = transformed.indexOf('{')
+    const bodyEnd = transformed.lastIndexOf('}')
+    if (bodyStart < 0 || bodyEnd <= bodyStart) throw new Error('ptc-runtime-node: the Bun transform lost the program wrapper')
+    return transformed.slice(bodyStart + 1, bodyEnd)
+  }
+  const moduleName: string = 'node:module'
+  const module = await import(moduleName) as { stripTypeScriptTypes(source: string): string }
+  const stripped = module.stripTypeScriptTypes(wrapped)
+  return stripped.slice(STRIP_PREFIX.length, stripped.length - STRIP_SUFFIX.length)
+}
 
 /** Node provider; direct file effects use the same sandbox service as Bash. */
 export class NodePtcRuntime extends PtcRuntime {
@@ -203,10 +233,10 @@ export class NodePtcRuntime extends PtcRuntime {
       // Abort callbacks can settle execution before or during an awaited operation.
       // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (settled) return await result.promise
-      const stripped = stripTypeScriptTypes(STRIP_PREFIX + spec.program + STRIP_SUFFIX)
+      const stripped = await stripProgramTypes(spec.program)
       parsing = false
       const data: ProgramBootData = {
-        code: stripped.slice(STRIP_PREFIX.length, stripped.length - STRIP_SUFFIX.length),
+        code: stripped,
         namespaces: [...bindings.values()].map(binding => ({
           global: binding.global,
           names: Object.keys(binding.functions),
