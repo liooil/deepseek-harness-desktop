@@ -1,12 +1,12 @@
 /** Deterministic provider-independent image normalization. */
 
-import type sharp from 'sharp'
 import type { Sharp } from 'sharp'
 import { AttachmentError, requestImageDimensions } from '@deepseek-ai/dsh-attachment'
 import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
 import { encodeFirstWithinLimit, encodingLadder, isExhaustedEncoding } from './encoding.ts'
-import { detectImage, encodedAlphaIsCompatible, resolveSharp } from './image.ts'
+import { detectImage, encodedAlphaIsCompatible } from './image.ts'
 import type { DetectedImage } from './image.ts'
+import { requireSharp } from './sharp.ts'
 
 /** Deployment-resolved policy for the persisted normalized attachment. */
 export interface NormalizationPolicy {
@@ -71,8 +71,13 @@ async function verifyNormalizedImage(
 }
 
 /** Build one fixed-size, oriented, metadata-free sRGB pipeline from submitted bytes. */
-function preparedPipeline(factory: typeof sharp, data: Uint8Array, width: number, height: number): Sharp {
-  return factory(data, { failOn: 'error', limitInputPixels: false })
+function preparedPipeline(
+  sharp: ReturnType<typeof requireSharp>,
+  data: Uint8Array,
+  width: number,
+  height: number,
+): Sharp {
+  return sharp(data, { failOn: 'error', limitInputPixels: false })
     .rotate()
     .toColourspace('srgb')
     .resize({ width, height, fit: 'inside', withoutEnlargement: true })
@@ -109,9 +114,9 @@ export async function normalizeImage(
   if (canPassThroughNormalization(detected, data.byteLength, policy)) {
     return { data, mediaType: detected.mediaType, width: detected.width, height: detected.height }
   }
+  const sharp = requireSharp()
   try {
     const { width, height } = initialDimensions(detected, policy)
-    const sharp = await resolveSharp()
     const encoded = await encodeFirstWithinLimit(
       encodingLadder(preparedPipeline(sharp, data, width, height), detected.hasAlpha),
       policy.maxBytes,

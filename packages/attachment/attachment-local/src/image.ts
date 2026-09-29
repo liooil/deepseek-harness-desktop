@@ -1,9 +1,9 @@
 /** Raster inspection: full decode at admission, header-only probe on verified reads. */
 
-import type sharp from 'sharp'
 import type { Sharp } from 'sharp'
 import { AttachmentError } from '@deepseek-ai/dsh-attachment'
 import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
+import { requireSharp } from './sharp.ts'
 
 /** Decoded metadata from a supported image. */
 export interface DetectedImage {
@@ -49,29 +49,6 @@ const MEDIA_TYPES: Readonly<Record<string, ImageMediaType>> = {
   gif: 'image/gif',
 }
 
-type SharpFactory = typeof sharp
-let loadSharp: () => Promise<SharpFactory> = async () => {
-  const packageName: string = 'sharp'
-  const module = await import(packageName) as unknown as { default: SharpFactory }
-  return module.default
-}
-
-/**
- * Resolve the host-configured Sharp factory at the image operation boundary.
- * @returns the usable Sharp export.
- */
-export function resolveSharp(): Promise<SharpFactory> {
-  return loadSharp()
-}
-
-/**
- * Supply a packaged native-image loader without statically bundling Sharp's addon.
- * @param loader - lazy host-owned factory resolving the usable Sharp export.
- */
-export function configureSharpLoader(loader: () => Promise<SharpFactory>): void {
-  loadSharp = loader
-}
-
 function carriesRetainedMetadata(metadata: Awaited<ReturnType<Sharp['metadata']>>): boolean {
   return metadata.exif !== undefined
     || metadata.xmp !== undefined
@@ -113,8 +90,8 @@ async function imageMetadata(image: Sharp): Promise<DetectedImage> {
  * @returns verified format and dimensions.
  */
 export async function probeImage(data: Uint8Array): Promise<DetectedImage> {
+  const sharp = requireSharp()
   try {
-    const sharp = await resolveSharp()
     return await imageMetadata(sharp(data, { failOn: 'error', limitInputPixels: false }))
   } catch (error) {
     if (error instanceof AttachmentError) throw error
@@ -137,8 +114,8 @@ export interface DecodedImageLimits {
  * @returns verified format and dimensions.
  */
 export async function detectImage(data: Uint8Array, limits?: DecodedImageLimits): Promise<DetectedImage> {
+  const sharp = requireSharp()
   try {
-    const sharp = await resolveSharp()
     const image = sharp(data, { failOn: 'error', limitInputPixels: false })
     const detected = await imageMetadata(image)
     if (limits?.maxPixels !== undefined && detected.width * detected.height > limits.maxPixels) {

@@ -27,10 +27,13 @@ const originalProbe = process.env[PROBE_NAME]
 const roots: string[] = []
 const dshBuildWorkflows = [
   'build-exe-for-python-sdk.yml',
+  'ci.yml',
   'desktop-ci.yml',
   'desktop-release.yml',
   'docs-pages.yml',
   'e2e.yml',
+  'release-publish.yml',
+  'release.yml',
   'sandbox.yml',
 ]
 
@@ -275,6 +278,10 @@ describe('client build environment', () => {
 
     write(join(official, 'apps/web/dist/index.html'), '<main>changed</main>')
     expect(() => { readClientBuildRecord(official) }).toThrow(/artifacts differ/)
+
+    const chunked = buildFixture(officialEnvironment)
+    write(join(chunked, 'packages/client/example/lib/client.pdf.js'), 'module.exports = {}\n')
+    expect(() => { readClientBuildRecord(chunked) }).toThrow(/artifacts differ/)
   })
 
   it('keeps public client values out of workflow-wide environments', () => {
