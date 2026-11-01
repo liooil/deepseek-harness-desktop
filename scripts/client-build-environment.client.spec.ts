@@ -31,7 +31,6 @@ const dshBuildWorkflows = [
   'desktop-ci.yml',
   'desktop-release.yml',
   'docs-pages.yml',
-  'e2e.yml',
   'release-publish.yml',
   'release.yml',
   'sandbox.yml',
