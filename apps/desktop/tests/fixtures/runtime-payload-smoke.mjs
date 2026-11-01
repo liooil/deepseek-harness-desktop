@@ -8,6 +8,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { checkPnpm } from './pnpm-smoke.mjs'
 
 const runtime = process.argv[2]
 assert.ok(runtime, 'Pass the filtered resources/dsh directory')
@@ -61,7 +62,11 @@ async function checkPty() {
   // A Windows GUI executable needs a console-owning shell when launched inside ConPTY.
   const executable = process.platform === 'win32' ? process.env.ComSpec : process.execPath
   const args = process.platform === 'win32' ? ['/d', '/c', 'node', script] : [script]
-  const terminal = pty.spawn(executable, args, { cwd: scratch, env, cols: 80, rows: 24 })
+  // Mirror the product's Windows allocation: the console host node-pty ships.
+  const terminal = pty.spawn(executable, args, {
+    cwd: scratch, env, cols: 80, rows: 24,
+    ...(process.platform === 'win32' ? { useConptyDll: true } : {}),
+  })
   let output = ''
   let exited = false
   let timedOut = false
@@ -157,12 +162,19 @@ function checkHtml() {
 try {
   const builtin = requireRuntime('node-addon-require-builtin')
   assert.equal(typeof builtin.requireBuiltin('internal/modules/esm/loader').getOrInitializeCascadedLoader, 'function')
-  checkPnpm()
+  console.error('runtime payload: pnpm')
+  await checkPnpm(resourcesRuntime)
+  console.error('runtime payload: koffi')
   checkKoffi()
+  console.error('runtime payload: sharp')
   await checkSharp()
+  console.error('runtime payload: html')
   checkHtml()
+  console.error('runtime payload: pty')
   await checkPty()
+  console.error('runtime payload: search')
   await checkSearch()
+  console.error('runtime payload: checks complete; awaiting process exit')
 } finally {
   // This private tree contains only fixture files; Windows may release handles after terminal exit.
   await rm(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 50 })

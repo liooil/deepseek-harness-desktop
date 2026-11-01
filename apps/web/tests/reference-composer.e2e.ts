@@ -151,7 +151,7 @@ describe.skipIf(MODE === 'record')('web e2e: file and session references through
     await seedSession(scaffold, targetSessionFixture(), TARGET_SESSION_ID, undefined, { createdAt: targetCreatedAt })
     browser = await chromium.launch()
     page = await newEnglishPage(browser)
-    unpinBrowserClock = await pinBrowserClock(page)
+    await pinBrowserClock(page)
     tripwire = watchConsole(page)
     // Fixture files land before the workspace connects so the Host's file
     // index never races their creation (the connect helper mkdirs the same

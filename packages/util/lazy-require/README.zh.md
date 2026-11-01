@@ -36,16 +36,6 @@ const requireNative = createLazyRequire<NativeModule>('native-package', import.m
 
 调用 `requireNative()` 时才加载依赖，并只加载一次。失败的加载不会被缓存。
 
-无法从文件系统解析该依赖的打包 Host 可以为该 specifier 注册自己的加载器：
-
-```ts
-import { configureLazyRequire } from '@deepseek-ai/dsh-lazy-require'
-
-configureLazyRequire('native-package', () => embeddedNativeModule)
-```
-
-未注册加载器的 specifier 仍使用 Node 的调用方相对 `require`。
-
 -----
 
 <a id="understand-the-implementation"></a>
@@ -70,7 +60,7 @@ configureLazyRequire('native-package', () => embeddedNativeModule)
 ## 进一步探索
 
 - [工具包地图](../README.zh.md)——相邻的共享原语。
-- [NPM 发布序列](../../../.agents/notes/archived/process/2026-08-10-npm-release-sequences.md)（已归档）——发布依赖分类与首次使用加载策略。
+- [NPM 发布序列](../../../.agents/notes/implemented/process/2026-08-10-npm-release-sequences.zh.md)——发布依赖分类与首次使用加载策略。
 
 -----
 
@@ -89,8 +79,6 @@ configureLazyRequire('native-package', () => embeddedNativeModule)
 
 - **仅限兼容 CommonJS 的依赖**——仅 ESM package 需要由调用方拥有异步 factory。
 - **WebWorker 打包需要显式请求**——静态 packer 无法发现仅在 `createLazyRequire()` 调用中命名的依赖。Preview image 使用的 package 必须通过受支持的字面量请求保持该依赖可达，直到 packer 能够识别此 helper。
-
-本包不发布运行时 invariant companion，因为 loader 不持有可独立观测的可变关系。
 
 <a id="dev-note"></a>
 ### 开发备注

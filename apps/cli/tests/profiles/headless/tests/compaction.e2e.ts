@@ -49,7 +49,17 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY)('compaction: a long session compa
       },
       persistenceRoot: join(workdir, '.sessions'),
     })
-    const agent = await ctx.agentLoop.create(SessionId('e2e-compaction'), { provider: 'deepseek-official', model: 'deepseek-v4-flash' })
+    const agent = await ctx.agentLoop.create(SessionId('e2e-compaction'), { provider: 'deepseek-official', model: 'deepseek-v4-flash' }, { cwd: workdir })
+
+    // Completed read turns cannot collapse into one retained parallel tool group.
+    for (let i = 1; i <= 4; i++) {
+      agent.followup(createUserMessage({
+        content: [{
+          type: 'text',
+          text: `Read only file${i}.txt using one bash cat command. Remember its number for my next question.`,
+        }], source: { kind: 'user' } }))
+      await waitForIdle(ctx, agent)
+    }
 
     // Completed read turns cannot collapse into one retained parallel tool group.
     for (let i = 1; i <= 4; i++) {

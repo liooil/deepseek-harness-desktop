@@ -206,12 +206,10 @@ describe('the new-session chip controller', () => {
       failSelect?: string
       failList?: string
       failListCode?: RemoteErrorCode
-      developerTools?: ObservableSnapshot<boolean>
       list?: () => Promise<ReturnType<typeof remoteRoster>>
     } = {},
   ): AgentPresetSeatController {
     const partial = {
-      configForms: { developerTools: { enabled: options.developerTools ?? createSnapshotStore(true) } },
       remote: {
         agentPresets: {
           list: options.list ?? (() => {
@@ -435,7 +433,9 @@ describe('the new-session chip controller', () => {
 
     // Showing `minimal` after a refusal would claim a composition the session
     // never got.
-    expect(controller.store.getSnapshot()).toMatchObject({ current: 'standard', error: 'already started' })
+    expect(controller.store.getSnapshot()).toMatchObject({
+      current: 'standard', error: { preset: { id: 'minimal' }, reason: 'already started' },
+    })
   })
 
   it('ignores a pick while a switch is in flight', async () => {
@@ -466,24 +466,40 @@ describe('the new-session chip controller', () => {
     expect(controller.store.getSnapshot().current).toBe('minimal')
   })
 
-  it('clears an unconsumed stage when Developer tools are off', async () => {
+  it('keeps the introduction cue after applying a staged pick', async () => {
     const writes: Recorded[] = []
-    const developerTools = createSnapshotStore(false)
-    const controller = chip(ROSTER, {
+    const session = {
       id: 's1' as SessionId,
-      blank: false,
+      blank: true,
       projectionValues: { agentPreset: 'standard' },
-    }, { writes, developerTools })
+    }
+    const controller = chip(ROSTER, session, { writes })
+    await controller.load()
+    controller.stage('minimal', true)
+    await controller.apply()
+    expect(writes).toEqual([{ ns: 'select', ops: 'minimal' }])
+    expect(controller.store.getSnapshot()).toMatchObject({ current: 'minimal', introduce: true })
+  })
+
+  it('keeps the introduction cue until acknowledged when the Session already runs the staged preset', async () => {
+    const session = {
+      id: 's1' as SessionId,
+      blank: true,
+      // Already composed from the staged preset, so applying the stage is a
+      // no-op that leaves the cue for the chip to play.
+      projectionValues: { agentPreset: 'minimal' },
+    }
+    const controller = chip(ROSTER, session)
+    await controller.load()
     controller.stage('minimal', true)
 
-    await controller.load()
+    await controller.apply()
     await controller.apply()
 
-    expect(writes).toEqual([])
-    expect(controller.store.getSnapshot()).toMatchObject({
-      current: 'standard',
-      introduce: false,
-    })
+    expect(controller.store.getSnapshot().introduce).toBe(true)
+    expect(controller.store.getSnapshot().current).toBe('minimal')
+    controller.introduced()
+    expect(controller.store.getSnapshot().introduce).toBe(false)
   })
 
   it('drops a stage made while Developer tools were on once they turn off', async () => {

@@ -36,16 +36,6 @@ const requireNative = createLazyRequire<NativeModule>('native-package', import.m
 
 Calling `requireNative()` loads the dependency once. A failed load is not cached.
 
-A packaged Host that cannot resolve the dependency from the filesystem registers its own loader for that specifier:
-
-```ts
-import { configureLazyRequire } from '@deepseek-ai/dsh-lazy-require'
-
-configureLazyRequire('native-package', () => embeddedNativeModule)
-```
-
-Specifiers without a registered loader keep Node's caller-relative `require`.
-
 -----
 
 <a id="understand-the-implementation"></a>
@@ -70,7 +60,7 @@ The utility creates Node's `require` from the supplied caller URL and caches onl
 ## Further Exploration
 
 - [Utility package map](../README.md) — adjacent shared primitives.
-- [NPM release sequences](../../../.agents/notes/archived/process/2026-08-10-npm-release-sequences.md) (archived) — published dependency classification and first-use loading policy.
+- [NPM release sequences](../../../.agents/notes/implemented/process/2026-08-10-npm-release-sequences.md) — published dependency classification and first-use loading policy.
 
 -----
 
@@ -89,8 +79,6 @@ None.
 
 - **CommonJS-compatible dependencies only** — ESM-only packages require an asynchronous factory owned by their caller.
 - **WebWorker packaging needs an explicit request** — the static packer does not discover dependencies named only in `createLazyRequire()` calls. A package used in a Preview image must keep the dependency reachable through a supported literal request until the packer recognizes this helper.
-
-No runtime invariant companion is published because the loader holds no independently observable mutable relationship.
 
 <a id="dev-note"></a>
 ### Dev Note
