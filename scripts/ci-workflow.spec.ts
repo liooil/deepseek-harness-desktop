@@ -159,7 +159,6 @@ describe('CI workflow', () => {
     for (const [file, jobName, expected] of [
       ['release.yml', 'pack', official],
       ['release-vendor.yml', 'pack', vendor],
-      ['e2e.yml', 'e2e', official],
     ] as const) {
       const job = workflowJob(loadWorkflow('.github/workflows/' + file), jobName)
       if (!Array.isArray(job.steps)) throw new TypeError(`${jobName} must define steps`)
@@ -212,7 +211,7 @@ describe('CI workflow', () => {
     expect(steps[preparation]).not.toHaveProperty('continue-on-error', true)
   })
 
-  it.each(['ci.yml', 'ci-master.yml', 'e2e.yml', 'release.yml', 'release-vendor.yml'])(
+  it.each(['ci.yml', 'ci-master.yml', 'release.yml', 'release-vendor.yml'])(
     '%s cancels superseded validation runs without crossing workflow or ref boundaries', (name) => {
       const workflow = loadWorkflow('.github/workflows/' + name)
       expect(workflow.concurrency).toEqual({
@@ -923,9 +922,6 @@ describe('CI workflow', () => {
       name: 'python runtime / release-shaped matrix',
       uses: './.github/workflows/build-exe-for-python-sdk.yml',
       with: { targets: 'node24-linux-x64,node24-win-x64', ci: true },
-      secrets: {
-        DEEPSEEK_API_KEY_EXTERNAL: '${{ secrets.DEEPSEEK_API_KEY_EXTERNAL }}',
-      },
     })
     expect(aggregate.needs).toEqual(['python-sdk', 'python-runtime'])
     for (const file of ['ci.yml', 'ci-windows.yml']) {
@@ -1052,14 +1048,6 @@ describe('CI workflow', () => {
 })
 
 describe('Runtime and LLM e2e Blacksmith routing', () => {
-  it('routes DeepSeek e2e only through the Linux Blacksmith switch', () => {
-    const job = workflowJob(loadWorkflow('.github/workflows/e2e.yml'), 'e2e')
-    for (const mode of ['', 'selfhosted', 'unexpected', 'blacksmith']) {
-      expect(evaluateRunsOn(job['runs-on'], { vars: { DSH_CI_FAILOVER_LINUX: mode, DSH_CI_FAILOVER_WINDOWS: 'blacksmith' } }))
-        .toBe(mode === 'blacksmith' ? 'blacksmith-4vcpu-ubuntu-2404' : 'ubuntu-latest')
-    }
-  })
-
   it('keeps native release and dispatch builders hosted while routing x64 CI by platform', () => {
     const workflow = loadWorkflow('.github/workflows/build-exe-for-python-sdk.yml')
     const build = workflowJob(workflow, 'build')
@@ -1131,14 +1119,6 @@ describe('Runtime and LLM e2e Blacksmith routing', () => {
     }
   })
 
-  it('bounds profile subprocess fan-out to the tested e2e default', () => {
-    const workflow = loadWorkflow('.github/workflows/e2e.yml')
-    const e2e = workflowJob(workflow, 'e2e')
-    if (!Array.isArray(e2e.steps)) throw new TypeError('DeepSeek e2e workflow must define steps')
-
-    const step = e2e.steps.filter(isRecord).find(candidate => candidate.name === 'E2E tests (real DeepSeek API)')
-    expect(step).toMatchObject({ env: { DSH_E2E_MAX_WORKERS: 6 } })
-  })
 })
 
 describe('Python release workflows', () => {
@@ -1291,25 +1271,6 @@ describe('Python release workflows', () => {
     expect(installedKeylessWindows).toMatchObject({ if: "runner.os == 'Windows'", shell: 'pwsh' })
     expect(cleanVenvWindows).toMatchObject({ if: "runner.os == 'Windows'", shell: 'pwsh' })
     expect(JSON.stringify(cleanVenvWindows)).toContain('Scripts\\\\python.exe')
-    expect(realApiPreflightPosix).toMatchObject({
-      env: { DEEPSEEK_API_KEY: '${{ secrets.DEEPSEEK_API_KEY_EXTERNAL }}' },
-    })
-    expect(String(realApiPreflightPosix.if)).toContain('inputs.ci')
-    expect(String(realApiPreflightPosix.if)).toContain('head.repo.fork')
-    expect(String(realApiPreflightPosix.if)).toContain('dependabot[bot]')
-    expect(realApiPreflightWindows).toMatchObject({ shell: 'pwsh' })
-    for (const step of [installedRealApiPosix, installedRealApiWindows]) {
-      expect(step).toMatchObject({
-        env: {
-          DEEPSEEK_API_KEY: '${{ secrets.DEEPSEEK_API_KEY_EXTERNAL }}',
-          DEEPSEEK_BASE_URL: 'https://api.deepseek.com/anthropic',
-        },
-      })
-    }
-    expect(JSON.stringify(installedRealApiPosix)).toContain('--scenario sdk-live')
-    expect(JSON.stringify(installedRealApiPosix)).toContain('-u DSH_RUNTIME_MODE')
-    expect(installedRealApiWindows).toMatchObject({ shell: 'pwsh' })
-    expect(JSON.stringify(installedRealApiWindows)).toContain('--scenario sdk-live --installed-wheel')
     expect(manylinuxSmoke).toMatchObject({ if: "runner.os == 'Linux'" })
     expect(JSON.stringify(manylinuxSmoke)).toContain('-e DSH_TELEMETRY_DISABLED')
   })
