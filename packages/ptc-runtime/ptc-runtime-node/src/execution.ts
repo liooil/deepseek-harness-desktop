@@ -1,5 +1,5 @@
 /** Select program syntax and own temporary or retained Node processes. */
-import { stripTypeScriptTypes } from 'node:module'
+import * as nodeModule from 'node:module'
 import { isAbsolute } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { PtcProgramFormat, PtcRunRequest, PtcRunResult, PtcRunSpec } from '@deepseek-ai/dsh-ptc-runtime'
@@ -142,6 +142,26 @@ function sameAdditionalRoots(left: readonly string[] | undefined, right: readonl
 
 const STRIP_PREFIX = 'async function __dsh_program__() {\n'
 const STRIP_SUFFIX = '\n}'
+
+/** Bun exposes no `node:module.stripTypeScriptTypes`; its `Transpiler` covers the erasable subset. */
+interface BunTranspiler {
+  transformSync(code: string): string
+}
+interface BunRuntime {
+  Transpiler: new (options: { loader: 'ts' }) => BunTranspiler
+}
+
+/**
+ * Erase TypeScript without executing the program.
+ * @param source - TypeScript source accepted by the selected evaluator.
+ * @returns the JavaScript the evaluator runs.
+ */
+function stripTypeScriptTypes(source: string): string {
+  if (typeof nodeModule.stripTypeScriptTypes === 'function') return nodeModule.stripTypeScriptTypes(source)
+  const bun = (globalThis as { Bun?: BunRuntime }).Bun
+  if (bun !== undefined) return new bun.Transpiler({ loader: 'ts' }).transformSync(source)
+  throw new Error('TypeScript stripping is unavailable: node:module.stripTypeScriptTypes and Bun.Transpiler are both missing')
+}
 const RETAINED_STATE_INSTRUCTIONS = 'Changing the session sandbox mode clears retained variables. An approved sandbox escalation runs in a separate temporary environment: it cannot access retained variables, and its declarations are discarded afterward. Restart, Agent disposal, cancellation, timeout, output overflow, or process failure clears the environment. If a variable is undefined, recreate it and reacquire its resources. State is not restored from the conversation, and failed evaluations can leave earlier mutations in memory. Redeclaring an existing let, const, or class name fails; assign to a mutable binding or use a new name. Await all tool calls; background callbacks cannot call tools after their evaluation ends. Await child-process completion before ending an evaluation; raw subprocess output belongs to whichever evaluation is active when it arrives.'
 
 function resolveMode(config: ResolvedConfig): ExecutionMode {
