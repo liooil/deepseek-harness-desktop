@@ -1,6 +1,6 @@
 /** Bounded RFC 5545 recurrence over UTC or explicit local wall time. */
 import { Temporal } from '@js-temporal/polyfill'
-import rrulePackage from 'rrule'
+import * as rrulePackage from 'rrule'
 import { MAX_FOUR_DIGIT_YEAR_MS, canonicalizeTimeZone, isFourDigitYearInstant, resolveLocalInstant } from './instant.ts'
 import { RecurrenceInputError, parseRecurrence, recurrenceDecision } from './recurrence.ts'
 import type { RecurrenceOccurrence, RecurrenceResult } from './recurrence.ts'
