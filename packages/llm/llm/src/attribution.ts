@@ -13,7 +13,25 @@ import { createRequire } from 'node:module'
 // User-Agent cannot drift from what is published (`./package.json` is an
 // export of this package; the relative path resolves from both `src/` and
 // the bundled `lib/`).
-const { version } = createRequire(import.meta.url)('../package.json') as { version: string }
+/**
+ * Read this package's version from its manifest.
+ *
+ * A single-file desktop executable compiles this module, so the relative
+ * `require` has no manifest to resolve; that build defines
+ * `globalThis.DSH_DESKTOP_VERSION` with the same released version.
+ * @returns the version sent in the provider User-Agent.
+ */
+function resolveVersion(): string {
+  try {
+    return (createRequire(import.meta.url)('../package.json') as { version: string }).version
+  } catch (error) {
+    const desktop = (globalThis as { DSH_DESKTOP_VERSION?: string }).DSH_DESKTOP_VERSION
+    if (typeof desktop === 'string') return desktop
+    throw error
+  }
+}
+
+const version = resolveVersion()
 
 /**
  * Static public application identity sent to LLM providers.

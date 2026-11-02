@@ -42,10 +42,17 @@ function identityField(manifest: Record<string, unknown>, field: 'name' | 'versi
  * @throws if package.json cannot be read or its version is missing or invalid.
  */
 export function getDshRuntimeVersion(): string {
-  // The executable's virtual filesystem intercepts string paths, not URL arguments.
-  const filename = fileURLToPath(new URL('../package.json', import.meta.url))
-  const manifest = objectOf(JSON.parse(fs.readFileSync(filename, 'utf8')), 'app-boot package.json')
-  return runtimeVersionOf(Object.hasOwn(manifest, 'version') ? manifest.version : undefined)
+  try {
+    // The executable's virtual filesystem intercepts string paths, not URL arguments.
+    const filename = fileURLToPath(new URL('../package.json', import.meta.url))
+    const manifest = objectOf(JSON.parse(fs.readFileSync(filename, 'utf8')), 'app-boot package.json')
+    return runtimeVersionOf(Object.hasOwn(manifest, 'version') ? manifest.version : undefined)
+  } catch (error) {
+    // A single-file desktop executable carries no manifest beside the compiled module.
+    const desktop = (globalThis as { DSH_DESKTOP_VERSION?: string }).DSH_DESKTOP_VERSION
+    if (typeof desktop === 'string') return runtimeVersionOf(desktop)
+    throw error
+  }
 }
 
 function satisfies(runtimeVersion: string, range: string): boolean {

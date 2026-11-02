@@ -356,6 +356,7 @@ class DesktopExecutableBuild {
       plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin()],
       define: {
         DSH_DESKTOP_VERSION: JSON.stringify(version),
+        'globalThis.DSH_DESKTOP_VERSION': JSON.stringify(version),
       },
       compile: {
         assets: [relative(root, this.dshRoot)],
