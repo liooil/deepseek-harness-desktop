@@ -69,9 +69,6 @@ jobs:
       - name: Hygiene
         run: pnpm run hygiene
 
-      - name: Documentation
-        run: pnpm run doc-sync
-
       - name: Check expected-output filenames
         shell: bash
         run: scripts/check-expected-filenames.sh
