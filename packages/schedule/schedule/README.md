@@ -20,6 +20,8 @@ Schedule sends instructions at a chosen time or on a repeating schedule. Ask an 
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
 
+-----
+
 <a id="use-this-package"></a>
 ## Use this package
 
@@ -179,6 +181,8 @@ History stays with the task and is pruned only on append. Missing old history ke
 `archiveAdmission()` reports active tasks whose `session` or reserved `new_once` target has the matching Session id. Stop deletes the set in one domain batch inside the same FIFO. A rejected batch announces `schedule/changed` so observers read the catalog again; an `unknown-state` failure quarantines the domain until it is reopened. Delivery refuses archived destination Sessions, including reserved retries. Reads and deletion never activate Sessions. Shutdown drains accepted work and notices before closing storage.
 
 </details>
+
+-----
 
 <a id="further-exploration"></a>
 ## Further Exploration

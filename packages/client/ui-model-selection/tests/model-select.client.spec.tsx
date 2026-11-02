@@ -448,65 +448,6 @@ describe('ModelSelect reasoning effort', () => {
       .map(row => row.textContent)).toEqual(['Max'])
   })
 
-  it('spins on the trigger and the chosen model row until the selection settles, across pane changes', async () => {
-    const groups = [{
-      id: 'deepseek-official',
-      name: 'DeepSeek',
-      models: [
-        { id: 'deepseek-v4-flash', name: 'DeepSeek-V4-Flash', reasoning },
-        { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro' },
-      ],
-    }]
-    const directory = createSnapshotStore<ModelDirectoryState>(state({ groups }))
-    let settle!: () => void
-    const select = vi.fn((selection: ModelSelection) => {
-      directory.set(state({ groups, status: 'selecting', pending: selection }))
-      return new Promise<{ ok: true; value: undefined }>((resolve) => {
-        settle = () => {
-          directory.set(state({ groups, current: selection }))
-          resolve({ ok: true, value: undefined })
-        }
-      })
-    })
-    render(<ModelSelect locked={false} available directory={directory} load={vi.fn()} select={select} t={t} />)
-    const spinners = () => document.querySelectorAll('[data-state="ongoing"]')
-
-    const trigger = screen.getByRole('button', { name: /选择模型|当前/ })
-    fireEvent.click(trigger)
-    fireEvent.click(screen.getByRole('menuitem', { name: /模型/ }))
-    fireEvent.click(screen.getByRole('menuitemradio', { name: /DeepSeek-V4-Pro/ }))
-    expect(spinners()).toHaveLength(2)
-    expect(screen.getByRole('menuitemradio', { name: /DeepSeek-V4-Pro/ }).querySelector('[data-state="ongoing"]')).not.toBeNull()
-    expect(trigger.querySelector('[data-state="ongoing"]')).not.toBeNull()
-    expect(trigger.getAttribute('aria-busy')).toBe('true')
-
-    // Leaving the pane unmounts the row; the trigger keeps the feedback.
-    fireEvent.keyDown(trigger, { key: 'Escape' })
-    expect(screen.queryByRole('menuitemradio')).toBeNull()
-    expect(spinners()).toHaveLength(1)
-    expect(trigger.querySelector('[data-state="ongoing"]')).not.toBeNull()
-
-    await act(async () => { settle() })
-    expect(spinners()).toHaveLength(0)
-    expect(trigger.getAttribute('aria-busy')).toBe('false')
-  })
-
-  it('spins on the chosen effort row only', () => {
-    const directory = createSnapshotStore<ModelDirectoryState>(state())
-    const select = vi.fn((selection: ModelSelection) => {
-      directory.set(state({ status: 'selecting', pending: selection }))
-      return new Promise<undefined>(() => {})
-    })
-    render(<ModelSelect locked={false} available directory={directory} load={vi.fn()} select={select} t={t} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /选择模型|当前/ }))
-    fireEvent.click(screen.getByRole('menuitem', { name: /推理等级/ }))
-    fireEvent.click(screen.getByRole('menuitemradio', { name: /Max/ }))
-    expect(screen.getAllByRole('menuitemradio')
-      .filter(row => row.querySelector('[data-state="ongoing"]') !== null)
-      .map(row => row.textContent)).toEqual(['Max'])
-  })
-
   it('portals the placed menu card to body and closes only on truly-outside mousedown', () => {
     const offsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!
     const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!

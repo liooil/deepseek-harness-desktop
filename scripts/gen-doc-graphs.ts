@@ -844,15 +844,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Routes explicit recognizers; the browser uses the authenticated Remote and keeps transcripts in the draft until submission.',
   },
   {
-    key: 'speechToText',
-    pkg: 'experimental-speech-to-text',
-    title: 'Experimental speech recognition providers',
-    mode: 'seam',
-    implementations: ['experimental-speech-to-text-sensevoice'],
-    consumers: ['experimental-api-speech-to-text'],
-    note: 'Routes explicit recognizers; the browser uses the authenticated Remote and keeps transcripts in the draft until submission.',
-  },
-  {
     key: 'agentTeams',
     pkg: 'experimental-agent-team',
     title: 'Agent Teams coordination domain',

@@ -358,24 +358,6 @@
   }
 }
 
-/* Hover swaps the trailing cell to the action buttons, which already carry
-   the pin/archive glyphs — hide the static markers so they do not double. */
-.sessionRow:hover .pinIndicator,
-.sessionRow.menuOpen .pinIndicator {
-  display: none;
-}
-
-/* The unclipped hover state drops the ellipsis, which would otherwise cover
-   the characters the marquee reached. Guarded because a touch tap
-   latches `:hover` on the row after the title has already returned: an
-   unguarded rule would strand that row without its ellipsis. */
-@media (hover: hover) {
-  .sessionRow:hover .title,
-  .sessionRow.menuOpen .title {
-    text-overflow: clip;
-  }
-}
-
 /* An open row menu pins the hover affordances (figma: the row keeps its
    hover fill while its dropdown is up). */
 .projectRow.menuOpen,

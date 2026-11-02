@@ -484,13 +484,6 @@ function installedProfilePackageNames(profile: Profile, manifest: ProfileManifes
     .filter(name => existsSync(join(profile.dir, 'node_modules', name, 'package.json')))
 }
 
-/** Return installed direct dependencies that Node resolves before profile fallback. */
-function installedProfilePackageNames(profile: Profile, manifest: ProfileManifest | undefined): string[] {
-  if (manifest === undefined) return []
-  return profileDependencyNames(manifest)
-    .filter(name => existsSync(join(profile.dir, 'node_modules', name, 'package.json')))
-}
-
 /** Collect the first resolvable package directory for each dependency name. */
 function dependencyClosure(
   anchors: readonly string[], reserved: ReadonlySet<string>,

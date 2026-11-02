@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { packedWorkspaceClosure, readWorkspacePackages } from './packed-workspace-closure.ts'
 
 /**
- * Keyless packed-workspace rehearsal. It packs the provider, its workspace peers, the vendored framework
+ * Keyless publish-path rehearsal. It packs the provider, its workspace peers, the vendored framework
  * peer, and the current repository's Landlock entry/platform packages, then installs those exact
  * tarballs in an external plain-Node consumer. The host launcher comes from the exact local tarballs,
  * so no registry copy, tsx, path mapping, or workspace resolution can hide missing files, dependency
@@ -58,14 +58,14 @@ describe.skipIf(!packable)('sandbox-local: packed-tarball distribution (publish-
     workDir = mkdtempSync(join(tmpdir(), 'dsh-packed-work-'))
 
     const nativePackDest = join(packDest, 'native')
-    const nativePack = spawnSync('node', ['./scripts/pack-workspace.mjs', nativePackDest, '--current-platform-only'], {
+    const nativePack = spawnSync('node', ['./scripts/pack-release.mjs', nativePackDest, '--current-platform-only'], {
       cwd: nativeDir,
       encoding: 'utf8',
       timeout: 120_000,
     })
     expect(nativePack.status, `native pack failed:\n${nativePack.stdout}\n${nativePack.stderr}`).toBe(0)
 
-    const nativeTarballs = readFileSync(join(nativePackDest, 'package-order.txt'), 'utf8')
+    const nativeTarballs = readFileSync(join(nativePackDest, 'publish-order.txt'), 'utf8')
       .trim()
       .split('\n')
       .map(tarball => join(nativePackDest, tarball))

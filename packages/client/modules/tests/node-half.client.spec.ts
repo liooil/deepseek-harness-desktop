@@ -130,39 +130,6 @@ it('publishes this package version and the build commit as the Host release in e
   expect((await mount(undefined)).release).toEqual({ version })
 })
 
-it.each([false, true])('tracks the Web carrier lifetime when server-first is %s', async (serverFirst) => {
-  const ctx = new Context()
-  contexts.push({ ctx })
-  ctx.provide('loader', { entries: () => [] })
-  const routes = new Set<WebRoute>()
-  const mountServer = () => ctx.plugin((serverCtx) => {
-    serverCtx.provide('webServer', {
-      register: (route: WebRoute) => {
-        routes.add(route)
-        return () => { routes.delete(route) }
-      },
-    } as WebServer)
-  })
-  let server = serverFirst ? await mountServer() : undefined
-  const modules = await ctx.plugin(ClientModuleRegistry)
-  const service = ctx.get('clientModules')!
-  expect(service.graph().entries).toEqual([])
-  expect((await service.fetchBundle(new Request('http://localhost/plugins/missing'))).status).toBe(404)
-  if (!serverFirst) {
-    expect(routes.size).toBe(0)
-    server = await mountServer()
-  }
-  await expect.poll(() => routes.size).toBe(1)
-  await server!.dispose()
-  await expect.poll(() => routes.size).toBe(0)
-  expect(modules.state).toBe(FiberState.ACTIVE)
-  expect((await service.fetchBundle(new Request('http://localhost/plugins/missing'))).status).toBe(404)
-  await mountServer()
-  await expect.poll(() => routes.size).toBe(1)
-  await modules.dispose()
-  expect(routes.size).toBe(0)
-})
-
 /** Create a resolvable package whose client export points at the returned path. */
 function writePackage(
   packageName: string,

@@ -991,7 +991,7 @@
     },
     {
       "type": "assistant/message",
-      "seq": 50,
+      "seq": 43,
       "time": 0,
       "data": {
         "turn": 1,
@@ -1115,7 +1115,7 @@
     },
     {
       "type": "tool/call",
-      "seq": 51,
+      "seq": 44,
       "time": 0,
       "data": {
         "turn": 1,
@@ -1127,7 +1127,7 @@
     },
     {
       "type": "tool-workflow/run-start",
-      "seq": 52,
+      "seq": 45,
       "time": 0,
       "data": {
         "runId": "{{workflow-run}}",
@@ -1136,7 +1136,7 @@
     },
     {
       "type": "subagent/catalog",
-      "seq": 53,
+      "seq": 46,
       "time": 0,
       "data": {
         "version": 0,
@@ -1148,7 +1148,7 @@
     },
     {
       "type": "tool-workflow/agent-start",
-      "seq": 54,
+      "seq": 47,
       "time": 0,
       "data": {
         "runId": "{{workflow-run}}",
@@ -1160,7 +1160,7 @@
     },
     {
       "type": "tool-workflow/agent-end",
-      "seq": 55,
+      "seq": 48,
       "time": 0,
       "data": {
         "runId": "{{workflow-run}}",
@@ -1170,7 +1170,7 @@
     },
     {
       "type": "tool-workflow/run-end",
-      "seq": 56,
+      "seq": 49,
       "time": 0,
       "data": {
         "runId": "{{workflow-run}}",
@@ -1179,7 +1179,7 @@
     },
     {
       "type": "tool/result",
-      "seq": 57,
+      "seq": 50,
       "time": 0,
       "data": {
         "turn": 1,
@@ -1202,13 +1202,13 @@
         }
       },
       "sourceEventSeqs": [
-        51
+        44
       ],
       "surfaceOp": "append"
     },
     {
       "type": "step/end",
-      "seq": 58,
+      "seq": 51,
       "time": 0,
       "data": {
         "turn": 1,
@@ -3305,7 +3305,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "assistant/message",
-          "seq": 50,
+          "seq": 43,
           "time": 0,
           "data": {
             "turn": 1,
@@ -3435,7 +3435,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "tool/call",
-          "seq": 51,
+          "seq": 44,
           "time": 0,
           "data": {
             "turn": 1,
@@ -3453,7 +3453,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "tool-workflow/run-start",
-          "seq": 52,
+          "seq": 45,
           "time": 0,
           "data": {
             "runId": "{{workflow-run}}",
@@ -3654,7 +3654,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "subagent/catalog",
-          "seq": 53,
+          "seq": 46,
           "time": 0,
           "data": {
             "version": 0,
@@ -3672,7 +3672,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "tool-workflow/agent-start",
-          "seq": 54,
+          "seq": 47,
           "time": 0,
           "data": {
             "runId": "{{workflow-run}}",
@@ -4090,7 +4090,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "tool-workflow/agent-end",
-          "seq": 55,
+          "seq": 48,
           "time": 0,
           "data": {
             "runId": "{{workflow-run}}",
@@ -4106,7 +4106,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "tool-workflow/run-end",
-          "seq": 56,
+          "seq": 49,
           "time": 0,
           "data": {
             "runId": "{{workflow-run}}",
@@ -4121,7 +4121,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "tool/result",
-          "seq": 57,
+          "seq": 50,
           "time": 0,
           "data": {
             "turn": 1,
@@ -4144,7 +4144,7 @@
             }
           },
           "sourceEventSeqs": [
-            51
+            44
           ],
           "surfaceOp": "append"
         }
@@ -4156,7 +4156,7 @@
         "sessionId": "{{parent}}",
         "event": {
           "type": "step/end",
-          "seq": 58,
+          "seq": 51,
           "time": 0,
           "data": {
             "turn": 1,

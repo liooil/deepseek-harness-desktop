@@ -19,8 +19,6 @@ import { collectModuleNames, packVfsImage, type ConfigTree, type ImageInstallati
 
 export { packPreviewFixture } from './preview.ts'
 
-export { packPreviewFixture } from './preview.ts'
-
 /**
  * Repository directories scanned for workspace and vendored packages. The
  * image only ever materializes runtime packages, which live here. The Landlock

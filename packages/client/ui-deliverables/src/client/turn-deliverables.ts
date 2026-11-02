@@ -30,11 +30,6 @@ export interface ChangesTurnData {
   readonly seq: number
 }
 
-/** The latest `workspace/changes` announcement of one Turn; the Host serves its summary by this sequence. */
-export interface ChangesTurnData {
-  readonly seq: number
-}
-
 /** Immutable produced-file facts published against one Turn. */
 export interface DeliverablesTurnData {
   readonly produced: readonly ProducedPath[]

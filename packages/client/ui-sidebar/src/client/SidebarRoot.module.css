@@ -363,13 +363,6 @@
   outline-offset: -2px;
 }
 
-/* The toggle is flush with .logoRow, which clips its own overflow, so an outward ring loses
-   the pixels that leave the row. Draw this control's ring inside its own box instead. */
-.iconButton.toggle:focus-visible {
-  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
-  outline-offset: -2px;
-}
-
 .collapsed .iconButton {
   width: 36px;
   height: 36px;
@@ -474,25 +467,6 @@
   :global([data-platform='darwin']) :global([data-ds-dark-theme]) :where(.root:not([role='dialog'])) .newSession:hover {
     background: rgb(255 255 255 / 0.2);
   }
-}
-
-/* macOS: the themed elevated fill reads as a foreign slab on the vibrancy
-   sidebar; a white wash sits in the glass like native macOS sidebar
-   controls. Dark keeps the same white ink at lower alpha. */
-:global([data-platform='darwin']) .newSession {
-  background: rgb(255 255 255 / 0.55);
-}
-
-:global([data-platform='darwin']) .newSession:hover {
-  background: rgb(255 255 255 / 0.3);
-}
-
-:global([data-platform='darwin']) :global([data-ds-dark-theme]) .newSession {
-  background: rgb(255 255 255 / 0.15);
-}
-
-:global([data-platform='darwin']) :global([data-ds-dark-theme]) .newSession:hover {
-  background: rgb(255 255 255 / 0.2);
 }
 
 .collapsed .newSession {

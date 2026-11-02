@@ -11,7 +11,6 @@ import type { RemoteErrorCode } from '@deepseek-ai/dsh-api-remotes/client'
 import { RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
 import type { SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import { createSnapshotStore, type ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import {
   AGENT_PRESET_SETTINGS_NS, AgentPresetSettingsController,
   writeDefaultPreset,
@@ -490,51 +489,6 @@ describe('the new-session chip controller', () => {
       projectionValues: { agentPreset: 'minimal' },
     }
     const controller = chip(ROSTER, session)
-    await controller.load()
-    controller.stage('minimal', true)
-
-    await controller.apply()
-    await controller.apply()
-
-    expect(controller.store.getSnapshot().introduce).toBe(true)
-    expect(controller.store.getSnapshot().current).toBe('minimal')
-    controller.introduced()
-    expect(controller.store.getSnapshot().introduce).toBe(false)
-  })
-
-  it('drops a stage made while Developer tools were on once they turn off', async () => {
-    const writes: Recorded[] = []
-    const developerTools = createSnapshotStore(true)
-    const session = {
-      id: 's1' as SessionId,
-      blank: true,
-      projectionValues: { agentPreset: 'standard' },
-    }
-    const controller = chip(ROSTER, session, { writes, developerTools })
-    await controller.load()
-    // The blank session keeps the composition its own screen already names.
-    controller.stage('minimal', true)
-    developerTools.set(false)
-
-    await controller.apply()
-
-    expect(writes).toEqual([])
-    expect(controller.store.getSnapshot()).toMatchObject({
-      current: 'standard',
-      introduce: false,
-    })
-  })
-
-  it('leaves the introduction cue to the chip while Developer tools stay on', async () => {
-    const developerTools = createSnapshotStore(true)
-    const session = {
-      id: 's1' as SessionId,
-      blank: true,
-      // Already composed from the staged preset, so applying the stage is a
-      // no-op that leaves the cue for the chip to play.
-      projectionValues: { agentPreset: 'minimal' },
-    }
-    const controller = chip(ROSTER, session, { developerTools })
     await controller.load()
     controller.stage('minimal', true)
 

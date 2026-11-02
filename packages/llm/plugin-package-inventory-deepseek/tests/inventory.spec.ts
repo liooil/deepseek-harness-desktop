@@ -256,18 +256,6 @@ describe('DeepSeek plugin package inventory', () => {
       .resolves.toMatchObject({ fields: { dsh_plugin_packages: { version: 1, packages: [] } } })
   })
 
-  it('does not bypass the profile package service for a missing bare package', async () => {
-    const { ctx } = await harness(undefined, true)
-    ctx.loader.internal = {
-      version: 'v2',
-      import: async () => ({ default: () => {} }),
-    } as unknown as NonNullable<typeof ctx.loader.internal>
-    await ctx.loader.create({ name: 'missing-profile-package' })
-
-    await expect(ctx.deepseekLlmApiExtensions.prepare({ body: { messages: [] }, signal: SIGNAL }))
-      .rejects.toThrow(/cannot resolve active package/)
-  })
-
   it('supports a direct embedding whose context has no base URL', async () => {
     const ctx = new Context()
     contexts.push(ctx)

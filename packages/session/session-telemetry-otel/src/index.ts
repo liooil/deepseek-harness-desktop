@@ -8,7 +8,7 @@
  * @module @deepseek-ai/dsh-session-telemetry-otel
  */
 
-import manifest from '@deepseek-ai/dsh-session-telemetry-otel/package.json' with { type: 'json' }
+import { createRequire } from 'node:module'
 import z from '@deepseek-ai/schemastery'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-command-feedback'

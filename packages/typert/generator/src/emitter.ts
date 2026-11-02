@@ -400,12 +400,6 @@ export class FaceModelEmitter {
       lines.push(`import type { ${names.join(', ')} } from ${quote(specifier)}`)
     }
     lines.push('')
-    if (packageModel.invocations.some(invocation => containsBytes(this.renderer, invocation.result.codecType))) {
-      lines.push('type RemoteDecoded<Value> = Value extends Uint8Array ? Uint8Array<ArrayBuffer>')
-      lines.push('  : Value extends string | number | boolean | null | undefined ? Value')
-      lines.push('  : { [Key in keyof Value]: RemoteDecoded<Value[Key]> }')
-      lines.push('')
-    }
     lines.push('declare module \'@deepseek-ai/dsh-typert-protocol\' {')
     const direct = packageModel.invocations.filter(invocation => invocation.invocation.kind === 'direct')
     const scoped = packageModel.invocations.filter(invocation =>

@@ -17,8 +17,7 @@ import {
   terminalFailed,
   terminalExitLabel,
 } from '../models/terminal-card-model.ts'
-import { formatToolBody, toolRowModel, toolTitleKey, type ToolRowState } from '../models/tool-call-model.ts'
-import { PreparingToolRow } from '../components/PreparingToolRow.tsx'
+import { formatToolBody, toolRowModel, type ToolRowState } from '../models/tool-call-model.ts'
 import { CONVERSATION_NS as NS } from '../../locale.ts'
 import { ExitCodeBadge } from '../components/ExitCodeBadge.tsx'
 import css from './bash-sample.module.css'

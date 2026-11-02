@@ -43,11 +43,6 @@
   height: calc(14px + var(--dsh-content-font-delta, 0px));
 }
 
-.leading svg {
-  width: calc(14px + var(--dsh-content-font-delta, 0px));
-  height: calc(14px + var(--dsh-content-font-delta, 0px));
-}
-
 .chevron {
   color: inherit;
 }

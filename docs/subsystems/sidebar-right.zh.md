@@ -95,8 +95,6 @@ export function apply(ctx: Context): void {
 
 `focusedTarget(element?)` 从实时 DOM 焦点（包括内嵌 iframe）捕获可见页面；侧栏外部或过期的侧栏标记不产生目标。`commandTarget(element?)` 还允许侧栏外部发起的打开操作使用已挂载 Session 的活动停靠窗格。`SidebarRightTarget` 捕获 Session、窗格、host、tab occurrence 和导航 revision。`isTargetCurrent(target)` 在执行前检查这些身份，因此重新打开记录或再次导航都会使已捕获的动作失效；它不会改为操作其他页面。关闭与落位结果见[控制器方法](../../packages/client/ui-sidebar-right/src/client/service.ts)。
 
-`focusedTarget(element?)` 从实时 DOM 焦点（包括内嵌 iframe）捕获可见页面；侧栏外部或过期的侧栏标记不产生目标。`commandTarget(element?)` 还允许侧栏外部发起的打开操作使用已挂载 Session 的活动停靠窗格。`SidebarRightTarget` 捕获 Session、窗格、host、tab occurrence 和导航 revision。`isTargetCurrent(target)` 在执行前检查这些身份，因此重新打开记录或再次导航都会使已捕获的动作失效；它不会改为操作其他页面。关闭与落位结果见[控制器方法](../../packages/client/ui-sidebar-right/src/client/service.ts)。
-
 ## Slot 与 owner props
 
 Sidebar 声明四个扩展 slot；其文档 tab 另行声明下表中的 keyed 文档正文 slot（[层级](slots.zh.md)）。
@@ -112,8 +110,6 @@ Sidebar 声明四个扩展 slot；其文档 tab 另行声明下表中的 keyed �
 正文、标题与引导页替换项接收框架注入的 `useTabInfo()`。它返回 `{ sidebar, panel, tab }`：`sidebar` 包含 `expanded` 与 `fullscreen`，`panel.id` 标识所属窗格，必填的 `panel.isFloating: boolean` 区分浮窗与停靠窗格。tab 移动时，两者通过 hook 更新，`tab.id` 保持不变。`tab` 还包含其他记录字段以及 `visible`、`navigation`、`signal` 和 `actions`。所有 tab 都要求 Session 位于前台。停靠正文还要求展开且选中；停靠标题要求展开；前台浮窗不随整栏收起。`signal` 在记录消失或插件卸载时中止，不因隐藏或切换 Session 而中止。`tab.actions` 提供绑定到标签所属 Session 的 `openResource`、`openTab` 与 `close`。打开操作返回 `void`，缺省落在当前所属停靠窗格，当前 tab 浮动时落在活动停靠窗格；`revealIfOpened` 缺省为 `true`，`replaceTab: true` 让新内容在同一历史项中替换本记录；带 `destination` 的 `openResource` 既不传本 tab 所在窗格，也不传本记录。菜单项保留普通的 `tab` 与 `dismiss` owner 参数。
 
 `navigation.revision` 在每次导航到该 tab 时递增，`params` 不变也递增，正文可仅凭「又被导航了」行动；按地址打开的 tab 为 `1`，没有人按地址打开的记录——种入的引导、刷新或撤销恢复的 tab——为 `0`。Tab 域为每条打开的记录保有一个 occurrence：记录出现即在资源模型里钉住，因此切换 tab 卸载正文也不丢内容；记录消失即中止并丢弃；撤销恢复的记录是新的 occurrence（[Tab 域](../../packages/client/ui-sidebar-right/README.zh.md#the-tab-domain)）。
-
-`tab.actions.bindCommands(commands)` 为已挂载正文提供 `SidebarRightTabCommands`，目前包含可选的 `refresh` 回调。省略的操作不可用；返回的 disposer 释放本次注册，不会移除较新正文的命令。标签生命周期结束时也会释放这些命令。`tab.refreshShortcut` 为页面控件提供生效的刷新目录项；没有可用条目时该字段可省略。这些字段声明在 [slot owner 类型](../../packages/client/ui-sidebar-right/src/client/contract/slots.ts)中。
 
 `tab.actions.bindCommands(commands)` 为已挂载正文提供 `SidebarRightTabCommands`，目前包含可选的 `refresh` 回调。省略的操作不可用；返回的 disposer 释放本次注册，不会移除较新正文的命令。标签生命周期结束时也会释放这些命令。`tab.refreshShortcut` 为页面控件提供生效的刷新目录项；没有可用条目时该字段可省略。这些字段声明在 [slot owner 类型](../../packages/client/ui-sidebar-right/src/client/contract/slots.ts)中。
 

@@ -642,23 +642,6 @@ interface RequestUserInput {
 }
 ```
 
-辅助调用方可以提供不含持久身份或来源的 user 内容。既有 `Message[]` 历史仍然是有效的请求输入。Session 写入、Agent 投递和已记录的标题请求仍然要求持久消息。
-
-```ts type-equiv
-/** User input for one LLM request; it has no durable Session identity or source. */
-interface RequestUserInput {
-  readonly role: 'user'
-  readonly content: UserMessage['content']
-  readonly id?: never
-  readonly source?: never
-}
-```
-
-```ts type-equiv
-/** A durable conversation message or a user input used only for one request. */
-type RequestMessage = Message | RequestUserInput
-```
-
 ```ts type-equiv
 /** A durable conversation message or a user input used only for one request. */
 type RequestMessage = Message | RequestUserInput

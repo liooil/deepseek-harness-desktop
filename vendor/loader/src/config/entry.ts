@@ -98,8 +98,8 @@ export class Entry {
     return evaluate(this.ctx, expr)
   }
 
-  private _patchContext(diff: string[]) {
-    this.context.waterfall('loader/patch-context', this, () => {
+  private async _patchContext(diff: string[]) {
+    await this.context.waterfall('loader/patch-context', this, async () => {
       Object.setPrototypeOf(this.ctx, this.parent.ctx)
 
       if (this.fiber?.uid && (diff.includes('config') || this.options.group)) {

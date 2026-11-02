@@ -27,12 +27,6 @@ declare module '@deepseek-ai/dsh-llm' {
   }
 }
 
-declare module '@deepseek-ai/dsh-llm' {
-  interface MessageSourceMap {
-    'test': { kind: 'test' } & ContextFormed
-  }
-}
-
 interface Bench {
   ctx: Context
   session: Session

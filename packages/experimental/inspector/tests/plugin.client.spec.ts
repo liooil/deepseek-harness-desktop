@@ -127,7 +127,7 @@ describe('experimental Inspector Client plugin', () => {
     })
     expect(JSON.parse(socket.sent[1]!) as unknown).toMatchObject({
       t: 'source/replace',
-      records: [{ topic: '@deepseek-ai/cordis/tree', payload: { schemaVersion: 0, truncated: false } }],
+      records: [{ topic: 'cordis/tree', payload: { schemaVersion: 0, truncated: false } }],
     })
 
     const treePromise = ctx.inspector.cordis.getTree()

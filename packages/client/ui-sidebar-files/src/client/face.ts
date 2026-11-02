@@ -105,10 +105,6 @@ export function createList(remote: WorkspaceFilesListRemote): ListWorkspaceDirec
 
 /** The tree's injected business face, as the navigator receives it. */
 export interface FilesInjected {
-  /** Refresh the open directory tree. @param tabId - owning tab. */
-  readonly refresh: (tabId: TabId) => void
-  /** Control automatic rereads without closing watches. @param tabId - owning tab. @param enabled - automatic-refresh setting. */
-  readonly setAutoRefresh: (tabId: TabId, enabled: boolean) => void
   /**
    * Register a navigator mounted for one tab in one pane, until the returned
    * release. A pane's records — the store's tree, the scroll offset, the file

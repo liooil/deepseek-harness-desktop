@@ -61,16 +61,6 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY)('compaction: a long session compa
       await waitForIdle(ctx, agent)
     }
 
-    // Completed read turns cannot collapse into one retained parallel tool group.
-    for (let i = 1; i <= 4; i++) {
-      agent.followup(createUserMessage({
-        content: [{
-          type: 'text',
-          text: `Read only file${i}.txt using one bash cat command. Remember its number for my next question.`,
-        }], source: { kind: 'user' } }))
-      await waitForIdle(ctx, agent)
-    }
-
     agent.followup(createUserMessage({
       content: [{
         type: 'text',

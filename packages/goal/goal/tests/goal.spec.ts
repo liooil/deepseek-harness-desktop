@@ -24,13 +24,6 @@ declare module '@deepseek-ai/dsh-llm' {
   }
 }
 
-declare module '@deepseek-ai/dsh-llm' {
-  interface MessageSourceMap {
-    'test': { kind: 'test' } & ContextFormed
-    'ordinary-user-message': { kind: 'ordinary-user-message' } & ContextFormed
-  }
-}
-
 interface StubAgent {
   agent: Agent
   session: Session

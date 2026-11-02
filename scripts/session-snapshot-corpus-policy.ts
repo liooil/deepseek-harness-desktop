@@ -48,8 +48,7 @@ export function assertSnapshotCorpusPolicy(
   const coverageByVersion = new Map<number, Set<string>>()
 
   for (const scenario of scenarios) {
-    const selectedVersion = scenario.selectedVersions[0]
-    if (selectedVersion === undefined) {
+    if (scenario.selectedVersions.length === 0) {
       throw new Error(`${scenario.key}: scenario owns no selected Session role`)
     }
     if (scenario.retained === undefined) {

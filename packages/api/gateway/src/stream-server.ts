@@ -109,10 +109,7 @@ export class RemoteStreamMuxServer {
         console.error('[api-gateway] Remote stream scope cleanup failed:', error)
       })
       this.connections.add(done)
-      void done.then(() => {
-        this.connections.delete(done)
-        void release()
-      })
+      void done.then(() => { this.connections.delete(done) })
     })
   }
 

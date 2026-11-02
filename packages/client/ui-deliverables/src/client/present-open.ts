@@ -29,7 +29,6 @@ export class PresentedOpenController {
   readonly state = createSnapshotStore<Record<string, PresentedOpenPhase | undefined>>({})
   /** Native destination metadata, or a retryable read failure. */
   readonly host = createSnapshotStore<PresentedHost | 'error' | null>(null)
-  private readonly expiry = new Map<string, ReturnType<typeof setTimeout>>()
   private loading: Promise<void> | undefined
   private metadata = new AbortController()
   private readonly lifetime = new AbortController()
@@ -126,7 +125,6 @@ export class PresentedOpenController {
   /** Cancel outstanding requests, suppress their announcements, and wait until they settle. */
   async dispose(): Promise<void> {
     this.lifetime.abort()
-    for (const url of this.expiry.keys()) this.clearExpiry(url)
     await Promise.all(this.pending)
   }
 

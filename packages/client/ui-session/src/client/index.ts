@@ -192,12 +192,6 @@ declare module '@deepseek-ai/dsh-api-session-controller/client' {
   }
 }
 
-declare module '@deepseek-ai/dsh-api-session-controller/client' {
-  interface SessionReferenceSourceMap {
-    mainView: unknown
-  }
-}
-
 declare module '@deepseek-ai/cordis' {
   interface Context {
     /** Session Controller adapter and session-scoped source registry. */
@@ -719,18 +713,6 @@ export function apply(ctx: Context): void {
       keyedHooks: { access: action => ctx.remoteAccess.source('session', binding.sessionId, action) },
     }),
   })
-}
-
-function sameSessionStatus(left: SessionStatusSnapshot, right: SessionStatusSnapshot): boolean {
-  if (left.size !== right.size) return false
-  for (const [id, status] of left) {
-    const candidate = right.get(id)
-    if (candidate === undefined
-      || candidate.running !== status.running
-      || candidate.pendingInteraction !== status.pendingInteraction
-      || candidate.completionUnread !== status.completionUnread) return false
-  }
-  return true
 }
 
 function sameSessionStatus(left: SessionStatusSnapshot, right: SessionStatusSnapshot): boolean {

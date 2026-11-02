@@ -279,31 +279,6 @@ export function SidebarRoot({
     </Tooltip>
   )
 
-  const darwinDesktop = isDarwinDesktop()
-  // Rail resting state is the whale mark; hovering swaps in the panel icon
-  // (the expand affordance, figma sidebar-hover flow). Expanded it is a plain
-  // panel icon.
-  const toggle = (
-    <Tooltip label={toggleLabel} shortcutKeys={shortcut?.keys} delayMs={500} side={captionTooltipSide}>
-      <button
-        type="button"
-        className={clsx(css.iconButton, css.toggle)}
-        aria-label={toggleLabel}
-        aria-keyshortcuts={shortcut?.aria}
-        onClick={() => { toggleSidebar() }}
-      >
-        {!wide && !windowsTitlebar && (
-          <span className={css.railMark} aria-hidden="true">
-            {renderSlot('sidebar.brand.mark', { size: 24 }, { fallback: <FishLogo size={24} /> })}
-          </span>
-        )}
-        {/* Rail icons render at 18 (figma rail spec); expanded keeps the glyph-native sizes. */}
-        <IconPanelLeftOutlineRegular className={css.panelIcon} size={wide || windowsTitlebar ? 16 : 18} />
-        {!wide && renderSlot('sidebar.toggle.badge', {})}
-      </button>
-    </Tooltip>
-  )
-
   return (
     <div
       ref={column}

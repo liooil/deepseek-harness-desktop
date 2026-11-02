@@ -177,8 +177,6 @@ export class SessionInputShell implements SessionInput {
   private filePicker: Parameters<ComposerKeyboard['bindFilePicker']>[0] | undefined
   private readonly unsubscribeInbox: (() => void) | undefined
 
-  private readonly unsubscribeInbox: (() => void) | undefined
-
   constructor(private readonly deps: SessionInputDeps) {
     this.draftEditor = new DraftEditorRuntime({
       onUpdate: () => { this.onEditorUpdate() },

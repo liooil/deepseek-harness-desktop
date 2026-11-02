@@ -545,7 +545,6 @@ describe('LocalSubprocessRuntime', () => {
       await fiber?.dispose()
       unmockLazyRequireForIsolatedRuntime()
       vi.doUnmock('../src/process-inspector.ts')
-      vi.doUnmock('../src/linux-scope.ts')
       unmockWin32ForIsolatedRuntime()
       vi.resetModules()
     }

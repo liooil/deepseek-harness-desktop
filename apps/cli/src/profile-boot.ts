@@ -191,9 +191,7 @@ export function initializeProfileFromDefault(
  * @returns the loaded profile.
  * @throws when explicit initialization names an unknown template or a shipped target.
  */
-export function prepareProfile(
-  name: string, userLayer = true, fromDefaultProfile?: string, installAnchor = INSTALL_ANCHOR,
-): Profile {
+export function prepareProfile(name: string, userLayer = true, fromDefaultProfile?: string): Profile {
   if (fromDefaultProfile !== undefined) initializeProfileFromDefault(name, fromDefaultProfile)
   const profile = loadProfile(NAME, name, INSTALL_ANCHOR, undefined, { userLayer })
   reportSkippedBundles(NAME, profile)

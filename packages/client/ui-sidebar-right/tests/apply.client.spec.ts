@@ -34,8 +34,6 @@ import { en, ja, zh, es, fr, de, ru, pt } from '../src/client/locales.ts'
 
 const SHORTCUT_CATALOG: readonly never[] = []
 
-const SHORTCUT_CATALOG: readonly never[] = []
-
 const SESSION = 's-test' as SessionId
 
 interface Recorded {

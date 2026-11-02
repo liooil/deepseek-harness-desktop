@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Packed-install rehearsal without registry writes: verify the packed
- * tarballs are exactly what a consumer install needs. `pnpm pack` already
- * produced the install payload; this script checks it
+ * Publish-path rehearsal without publishing: verify the packed tarballs are
+ * exactly what a consumer install needs. `pnpm pack` already produced the
+ * bytes `pnpm publish` would upload; this script checks the payload
  * (coverage, concrete dependency versions, NO lifecycle install scripts —
  * this family has no install fallback on purpose), installs the entry plus
  * THIS host's platform tarball into a throwaway consumer OUTSIDE the repo,

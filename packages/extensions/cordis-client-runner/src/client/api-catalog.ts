@@ -992,10 +992,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SlotFactoryMap {\n}',
   },
   {
-    name: 'SlotFactoryMap',
-    declaration: 'export interface SlotFactoryMap {\n}',
-  },
-  {
     name: 'SlotInjectFace',
     declaration: 'export type SlotInjectFace<I extends object> = I extends {\n    hooks: infer HS extends object;\n} ? Omit<I, \'hooks\'> & PropsSlotHooks<HS> : I;',
   },

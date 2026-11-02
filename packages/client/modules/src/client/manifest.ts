@@ -359,14 +359,6 @@ export interface ClientBundleRequire {
   asset(reference: string): string
 }
 
-/** Module resolver passed into a registered Client bundle factory. */
-export interface ClientBundleRequire {
-  /** Resolve a module-table dependency synchronously. */
-  (specifier: string): unknown
-  /** Load and resolve a package-local dynamic chunk asynchronously. */
-  async(specifier: string): Promise<unknown>
-}
-
 /** One client bundle's factory registration submitted through `window.__ModuleLoader__.load`. */
 export interface ClientBundleRegistration {
   /** Plugin id (package name) — the registration key; must match the graph row being executed. */

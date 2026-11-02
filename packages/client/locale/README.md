@@ -43,10 +43,6 @@ Call `ctx.locale.register(ns, { zh, en, ja })` with a namespace merged into `Loc
 
 Use `ctx.locale.resolveText(text)` for [`LocalizedText`](../../util/package-manifest/README.md), such as installed plugin titles and descriptions. Literal strings are returned unchanged. Translation maps use lowercase language ids, require an `en` fallback, and follow the active language's declared fallback chain. They do not consult or register namespace dictionaries.
 
-### Resolving package text
-
-Use `ctx.locale.resolveText(text)` for [`LocalizedText`](../../util/package-manifest/README.md), such as installed plugin titles and descriptions. Literal strings are returned unchanged. Translation maps use lowercase language ids, require an `en` fallback, and follow the active language's declared fallback chain. They do not consult or register namespace dictionaries.
-
 ### Registering a language pack
 
 An external client plugin registers the language definition and each translated namespace as owned effects; definitions and dictionaries may register in either order:

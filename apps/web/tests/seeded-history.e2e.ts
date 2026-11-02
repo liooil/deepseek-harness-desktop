@@ -40,15 +40,6 @@ declare module '@deepseek-ai/dsh-llm' {
 type CheckpointSource = Extract<MessageSource, { readonly kind: 'compact-checkpoint' }>
 type CheckpointCommandId = NonNullable<CheckpointSource['sourceCommandId']>
 
-declare module '@deepseek-ai/dsh-llm' {
-  interface MessageSourceMap {
-    'fixture': { kind: 'fixture' } & ContextFormed
-  }
-}
-
-type CheckpointSource = Extract<MessageSource, { readonly kind: 'compact-checkpoint' }>
-type CheckpointCommandId = NonNullable<CheckpointSource['sourceCommandId']>
-
 const SNAPSHOT_DIR = fileURLToPath(new URL('../../../snapshots/web/seeded-history', import.meta.url))
 const REASONING_EXPECTED_DIR = fileURLToPath(new URL('./expected/seeded-history', import.meta.url))
 const SEED = fileURLToPath(new URL('../../../snapshots/web/seeded-history/session.v3.jsonl', import.meta.url))

@@ -117,17 +117,6 @@
   gap: 8px;
 }
 
-/* The auto grid column collapses with an empty or CSS-hidden occupant.
-   The occupant owns its trailing gap so hidden controls reserve no space. */
-.headerLeading {
-  grid-column: 1;
-  grid-row: 1;
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-}
-
 .crumbs {
   display: flex;
   align-items: center;

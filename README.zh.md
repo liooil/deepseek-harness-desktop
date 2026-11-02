@@ -1,10 +1,10 @@
-# DeepSeek Harness Desktop
+# DeepSeek Harness
 
 [English](README.md) | 中文
 
-DeepSeek Harness Desktop 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的非官方桌面发行版；上游开源 agent harness（智能体框架）由 [DeepSeek AI](https://deepseek.com) 开发。
+DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness（智能体框架）。
 
-本下游仓库将上游基于 Cordis 的插件化应用打包为原生 `dsh-desktop` 可执行文件。产品开发与通用项目文档仍归上游仓库所有；本仓库负责桌面兼容性、验证与发布。
+它构建于**一切皆插件**的架构之上，由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
@@ -18,16 +18,15 @@ DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来
 
 ## 运行
 
-### 运行桌面二进制
+### 通过 `npm` 运行
 
-从 [GitHub Releases](https://github.com/liooil/deepseek-harness-desktop/releases) 下载匹配的 `dsh-desktop-{linux,windows,macos}-{x64,arm64}` 可执行文件。Release 可执行文件包含服务端和 Web UI，不需要安装 Node.js、Bun 或 npm。
+安装 `Node.js`，然后运行：
 
 ```sh
-chmod +x ./dsh-desktop-linux-x64
-./dsh-desktop-linux-x64
+npx @deepseek-ai/dsh web
 ```
 
-在 Windows 上直接运行 `.exe` 文件。Linux webview 模式需要 WebKit2GTK 4.1；Windows webview 模式需要 WebView2。使用 `--browser` 打开独立浏览器窗口，或使用 `--smoke --cwd <directory>` 在不打开窗口的情况下验证 Release。详见[桌面启动器指南](apps/desktop/README.zh.md)。
+该命令默认会在 `http://127.0.0.1:3080` 启动 Web UI，本机启动时还会用默认浏览器打开页面。通过 SSH 启动时只打印宿主机 URL，因为本地转发地址由 SSH 客户端或编辑器持有。传入 `--no-open` 可仅运行服务器而不打开浏览器。详见 [Web UI 指南](docs/user/guide/index.zh.md)。
 
 <a id="run-from-source"></a>
 
@@ -36,22 +35,14 @@ chmod +x ./dsh-desktop-linux-x64
 如需从仓库源码运行：
 
 ```sh
-git clone https://github.com/liooil/deepseek-harness-desktop.git
-cd deepseek-harness-desktop
+git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
 pnpm install
 pnpm run build
 pnpm dsh web
 ```
 
-### 从源码运行桌面应用
-
-桌面启动器同时需要 `Node.js` 和 [Bun](https://bun.sh)。请先构建仓库，然后运行：
-
-```sh
-pnpm desktop
-```
-
-Windows 和 Linux 默认使用系统 webview，macOS 默认使用独立浏览器窗口。可通过 `pnpm desktop --webview` 或 `pnpm desktop --browser` 显式选择任一模式。要求和选项详见[桌面启动器指南](apps/desktop/README.zh.md)。`pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
+`pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
 
 ## 社区与支持
 

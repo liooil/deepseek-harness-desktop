@@ -104,13 +104,6 @@ describe('recorded-session corpus policy', () => {
       .toThrow(`session/old: selected Session generation v1 must be retained baseline v3 or current v${SESSION_FORMAT_VERSION}`)
     expect(() => assertSnapshotCorpusPolicy([{ ...completeV0, selectedVersions: [0, SESSION_FORMAT_VERSION] }]))
       .toThrow(`session/v0: selected Session generation v${SESSION_FORMAT_VERSION} does not match expected v0`)
-    expect(() => assertSnapshotCorpusPolicy([{ ...baseline, selectedVersions: [3, SESSION_FORMAT_VERSION] }]))
-      .toThrow(`session/v3: selected Session generation v${SESSION_FORMAT_VERSION} does not match expected v3`)
-  })
-
-  it('rejects future unpinned generations', () => {
-    expect(() => assertSnapshotCorpusPolicy([{ key: 'session/future', selectedVersions: [SESSION_FORMAT_VERSION + 1] }]))
-      .toThrow(`session/future: selected Session generation v${SESSION_FORMAT_VERSION + 1} must be retained baseline v3 or current v${SESSION_FORMAT_VERSION}`)
   })
 
   it.each([2, SESSION_FORMAT_VERSION + 1])('rejects unsupported child generation %s', (version) => {

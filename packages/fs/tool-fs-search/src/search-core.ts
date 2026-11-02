@@ -155,16 +155,6 @@ function completeStdout(toolName: string, stdout: SubprocessOutputRead, rawOutpu
 }
 
 let rgPathPromise: Promise<string> | undefined
-let packagedRgPath: string | (() => Promise<string>) | undefined
-
-/**
- * Supply a host-owned platform binary path or lazy path resolver.
- * @param path - absolute ripgrep path, or a resolver that prepares it at first search.
- */
-export function configureRipgrepPath(path: string | (() => Promise<string>)): void {
-  packagedRgPath = path
-  rgPathPromise = undefined
-}
 
 /**
  * The packaged ripgrep binary path, resolved lazily once per process.
@@ -180,8 +170,6 @@ export function configureRipgrepPath(path: string | (() => Promise<string>)): vo
  */
 export function resolveRgPath(): Promise<string> {
   rgPathPromise ??= Promise.resolve().then(async () => {
-    if (typeof packagedRgPath === 'function') return packagedRgPath()
-    if (packagedRgPath !== undefined) return packagedRgPath
     const executable = parse(process.execPath)
     const executableSidecar = process.platform === 'win32'
       ? join(executable.dir, `${executable.name}-rg.exe`)

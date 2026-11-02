@@ -7,10 +7,6 @@
  */
 import { ICON_ARTWORK, iconSymbolId, type IconGlyph, type IconWeight } from './artwork.ts'
 import type { IconProps } from './props.ts'
-import {
-  BrowseOutlineArtwork, ChatLinesOutlineArtwork, CodeBracketsArtwork, FolderCloseArtwork,
-  GlobeOutlineArtwork, NewChatOutlineArtwork,
-} from './shared-artwork.tsx'
 
 export type { IconProps } from './props.ts'
 export { ICON_MEDIUM_STROKE, ICON_REGULAR_STROKE, ICON_SYMBOLS, type IconSymbolId } from './artwork.ts'

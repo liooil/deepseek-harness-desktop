@@ -38,8 +38,6 @@ import {
 
 const subagentConfigs = new WeakMap<Context, Awaited<ReturnType<typeof liveConfig>>>()
 
-const subagentConfigs = new WeakMap<Context, Awaited<ReturnType<typeof liveConfig>>>()
-
 type Script = ConstructorParameters<typeof MockAdapter>[0]
 
 /** One scripted response that may wait on a caller-released gate before streaming. */
@@ -80,25 +78,6 @@ afterEach(async () => {
   if (errors.length === 1) throw errors[0]
   if (errors.length > 1) throw new AggregateError(errors, 'temp-root cleanup failed')
 })
-
-/** Mount the real Schedule service for root-only tool-registration assertions. */
-async function mountScheduleForOwnership(ctx: Context): Promise<void> {
-  const root = mkdtempSync(join(tmpdir(), 'dsh-subagent-schedule-'))
-  const fibers: Array<{ dispose(): Promise<void> }> = []
-  cleanups.unshift(async () => {
-    for (const fiber of fibers.toReversed()) await fiber.dispose()
-    rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
-  })
-  fibers.push(await ctx.plugin(Storage))
-  fibers.push(await ctx.plugin(StorageJson, { root }))
-  fibers.push(await ctx.plugin(StorageDomain, { backend: 'json' }))
-  // This ownership test creates no reminders and invokes no Remote methods.
-  // Unexpected delivery must fail instead of activating an unrelated Session.
-  ctx.provide('sessionController', {
-    resolveAgent: async () => { throw new Error('ownership test must not dispatch reminders') },
-  } as never)
-  fibers.push(await ctx.plugin(ScheduleService))
-}
 
 /** Boot the full continuable stack: loop, persistence, providers, and subagents. */
 async function setupWith(

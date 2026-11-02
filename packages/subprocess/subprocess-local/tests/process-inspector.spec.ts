@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   createProcessInspector,
-  createRuntimeProcessInspector,
   linuxProcessGroupHasLiveMembers,
   parseProcStat,
 } from '@deepseek-ai/dsh-subprocess-local/src/process-inspector.ts'
@@ -335,13 +334,27 @@ describe('macOS process inspector', () => {
     ])
   })
 
-  it('returns undefined for missing or invalid foreground groups and dispatches platform inspectors', async () => {
+  it('re-reads the process table before signalling instead of trusting an earlier observation', () => {
+    const fake = fakeInternals()
+    fake.setPs(' 11 10 Mon Jul 21 10:00:01 2026\n')
+    const inspector = createProcessInspector('darwin', 'arm64', fake.internals)
+    inspector.snapshot()
+    // The member exits after that observation; a recycled pid would otherwise
+    // inherit the observed identity and take the signal meant for the original.
+    fake.setPs('')
+
+    inspector.signalProcess({ pid: 11, started: 'Mon Jul 21 10:00:01 2026' }, 'SIGKILL')
+
+    expect(fake.kills).toEqual([])
+  })
+
+  it('returns undefined for missing or invalid foreground groups and dispatches platform inspectors', () => {
     const fake = fakeInternals()
     fake.setTpgid('-1')
     expect(createProcessInspector('darwin', 'arm64', fake.internals).foregroundPgid(1)).toBeUndefined()
     fake.internals.exec = () => { throw new Error('gone') }
     expect(createProcessInspector('darwin', 'arm64', fake.internals).foregroundPgid(1)).toBeUndefined()
-    expect(await createRuntimeProcessInspector('win32', 'x64', fake.internals)).toBeInstanceOf(WindowsProcessInspector)
+    expect(createProcessInspector('win32', 'x64', fake.internals)).toBeInstanceOf(WindowsProcessInspector)
     expect(() => createProcessInspector('freebsd', 'x64', fake.internals)).toThrow('unsupported on platform freebsd')
   })
 })

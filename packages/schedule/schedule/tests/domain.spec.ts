@@ -40,42 +40,6 @@ describe('Host task record decoding', () => {
     expect(() => decodeScheduleRecord(value)).toThrow(ScheduleLogError)
   })
 
-  it('decodes and folds a v1 create record written before titles existed', () => {
-    const untitled = [
-      { version: 1, operation: 'create', schedule: {
-        id: 'after', kind: 'after', prompt: 'check logs', afterSeconds: 30, scheduledAt: '2026-08-05T12:00:00.000Z' } },
-      { version: 1, operation: 'create', schedule: {
-        id: 'at', kind: 'at', prompt: 'join meeting', scheduledAt: '2026-08-06T01:00:00.000Z' } },
-      { version: 1, operation: 'create', schedule: {
-        id: 'every', kind: 'every', prompt: 'check metrics', everySeconds: 300, scheduledAt: '2026-08-05T12:05:00.000Z' } },
-    ]
-    for (const data of untitled) {
-      const decoded = decodeScheduleChange(data)
-      if (decoded.operation !== 'create') throw new Error('expected create')
-      expect(Object.hasOwn(decoded.schedule, 'title')).toBe(false)
-    }
-    expect(foldScheduleEvents(untitled.map((data, seq) => scheduleEvent(data, seq)))).toEqual({
-      active: [
-        expect.objectContaining({ id: 'after' }),
-        expect.objectContaining({ id: 'at' }),
-        expect.objectContaining({ id: 'every' }),
-      ],
-      seenIds: ['after', 'at', 'every'],
-    })
-  })
-
-  it('still refuses a historical create record whose present title is malformed', () => {
-    const cases = [
-      { ...createData().schedule, title: '' },
-      { ...atCreateData().schedule, title: ' padded' },
-      { ...everyCreateData().schedule, title: 'x'.repeat(MAX_TITLE_LENGTH + 1) },
-      { ...createData().schedule, title: undefined, extra: true },
-    ]
-    for (const schedule of cases) {
-      expect(() => decodeScheduleChange({ version: 1, operation: 'create', schedule })).toThrow(ScheduleLogError)
-    }
-  })
-
   it.each([
     null, [], { kind: 'unknown' },
     { ...records[0], id: ' padded' },

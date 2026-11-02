@@ -1,4 +1,4 @@
-/** Run publint over the manifest-declared publication view of every non-private package. */
+/** Run publint over the exact manifest-declared publication view of every package. */
 
 import {
   globSync,
@@ -30,7 +30,6 @@ interface PackageTarget {
 
 interface PackageManifest {
   name?: string
-  private?: boolean
   files?: unknown
 }
 
@@ -59,7 +58,6 @@ function workspacePackages(): PackageTarget[] {
       const manifest = JSON.parse(readFileSync(absoluteManifestPath, 'utf8')) as PackageManifest
       return { path: dirname(manifestPath), directory: dirname(absoluteManifestPath), manifest }
     })
-    .filter(target => target.manifest.private !== true)
 }
 
 function publintConcurrency(total: number): number {
@@ -111,7 +109,7 @@ function addPath(path: string, paths: Set<string>): void {
   if (stat.isDirectory()) {
     // readdirSync, not globSync: `**/*` skips dot-prefixed segments, but npm
     // pack publishes dotfiles inside included directories, and this view must
-    // match the package-manager payload.
+    // match what npm publishes.
     for (const entry of readdirSync(path, { recursive: true, withFileTypes: true })) {
       if (entry.isFile()) paths.add(resolve(entry.parentPath, entry.name))
     }

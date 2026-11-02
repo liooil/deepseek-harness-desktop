@@ -1459,22 +1459,6 @@ export function resolveDesktopStartupLocale(preference: string | null, languages
   return resolveDesktopLocale('en')
 }
 
-/**
- * Choose a built-in dictionary from the shared preference, then ordered OS languages.
- * @param preference - explicit locale.preference, or null when no language was selected.
- * @param languages - operating-system languages in preference order.
- * @returns the supported dictionary, falling back to English.
- */
-export function resolveDesktopStartupLocale(preference: string | null, languages: readonly string[]): DesktopLocale {
-  const selected = preference?.toLowerCase()
-  if (selected === 'zh' || selected === 'en') return resolveDesktopLocale(selected)
-  for (const language of languages) {
-    const primary = language.toLowerCase().split('-')[0]
-    if (primary === 'zh' || primary === 'en') return resolveDesktopLocale(primary)
-  }
-  return resolveDesktopLocale('en')
-}
-
 /** Replace named placeholders in one locale-owned message. */
 export function formatDesktopMessage(
   message: string,

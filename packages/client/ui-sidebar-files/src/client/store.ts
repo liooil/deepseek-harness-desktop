@@ -96,8 +96,6 @@ export interface FilesTreeState {
   levels: Record<string, LevelState>
   /** Expanded absolute directory paths, root included. */
   expanded: string[]
-  /** The body's scroll offset in px, so a remounted tree comes back where the reader was. */
-  scrollTop: number
 }
 
 /** One pane's navigator: whether and how wide it is shown, and its tree once started. */

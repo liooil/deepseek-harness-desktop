@@ -620,36 +620,6 @@ export class SessionController extends TypertRemoteService {
   }
 
   /**
-   * Read all registered projections without activating an Agent.
-   * @param request - Session whose current values are required.
-   * @param signal - cancellation for the Session observation.
-   * @returns complete baseline, or null when the Session does not exist.
-   */
-  @Remote('projections')
-  async projections(request: SessionProjectionsRequest, signal: AbortSignal): Promise<SessionProjectionsValue> {
-    const { sessionId } = request
-    if (sessionId.length === 0) {
-      throw new RemoteError('gateway/bad-request', 'sessionId must not be empty', {})
-    }
-    try {
-      using observation = await this.ctx.sessionQuery.observeSession(sessionId, { signal })
-      const projections = observation.projections
-      if (projections === undefined) {
-        throw new RemoteError('session/projections-unavailable', 'Session projections are unavailable', {})
-      }
-      return { asOfSeq: projections.asOfSeq, values: projections.values as SessionProjectionValues }
-    } catch (error: unknown) {
-      if (error instanceof SessionQueryError && error.code === 'SESSION_QUERY_SESSION_NOT_FOUND') return null
-      if (signal.aborted
-        || (error instanceof SessionQueryError && error.code === 'SESSION_QUERY_ABORTED')) {
-        throw new RemoteError('gateway/cancelled', 'Session projection read was cancelled', {}, { cause: error })
-      }
-      if (error instanceof RemoteError) throw error
-      throw new RemoteError('gateway/internal', 'Session projection read failed', {}, { cause: error })
-    }
-  }
-
-  /**
    * Stream a complete live-control baseline followed by replacement frames.
    * @param signal - cancellation owned by the Remote stream carrier.
    * @returns one complete baseline followed by live replacement frames.

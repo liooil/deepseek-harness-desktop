@@ -1165,54 +1165,6 @@ class JsonlSessionPersistence extends SessionPersistence {
       ids.add(metadata.header.id)
       artifacts.push({ ...metadata, path: selected.sourcePath, sourceVersion: selected.sourceVersion })
     }
-    return sources
-  }
-
-  /** Historical logical events depend on the corpus, including members with unreadable headers. */
-  private async historicalCorpusRevision(signal?: AbortSignal): Promise<string> {
-    const paths = (await this.listGenerations(signal)).map(source => source.sourcePath).sort()
-    const hash = createHash('sha256')
-    for (const path of paths) {
-      signal?.throwIfAborted()
-      let revision: string
-      try {
-        revision = fileRevision(await stat(path, { bigint: true }))
-      } catch (error: unknown) {
-        if (!isENOENT(error)) throw error
-        revision = 'missing'
-      }
-      hash.update(JSON.stringify([path, revision]))
-    }
-    signal?.throwIfAborted()
-    return hash.digest('hex')
-  }
-
-  private async listArtifacts(
-    signal?: AbortSignal,
-  ): Promise<Array<{ header: SessionHeader; path: string; sourceVersion: number }>> {
-    signal?.throwIfAborted()
-    await this.ensureRootEncoding()
-    signal?.throwIfAborted()
-    const artifacts: Array<{ header: SessionHeader; path: string; sourceVersion: number }> = []
-    const ids = new Set<SessionId>()
-    for (const selected of await this.listGenerations(signal)) {
-      signal?.throwIfAborted()
-      let header: SessionHeader | undefined
-      try {
-        header = await this.readGenerationHeader(selected, undefined, signal)
-      } catch (error: unknown) {
-        if (error instanceof SessionFormatUnsupportedError || error instanceof SessionPersistenceCorruptionError) continue
-        throw error
-      }
-      if (header === undefined) {
-        continue
-      }
-      if (ids.has(header.id)) {
-        throw new Error(`duplicate JSONL session id "${header.id}" appears in multiple project directories`)
-      }
-      ids.add(header.id)
-      artifacts.push({ header, path: selected.sourcePath, sourceVersion: selected.sourceVersion })
-    }
     signal?.throwIfAborted()
     return artifacts
   }

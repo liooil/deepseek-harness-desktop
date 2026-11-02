@@ -5,7 +5,6 @@ apps/desktop/.env.macos
 apps/desktop/*.p12
 node_modules/
 lib/
-apps/desktop-bundesk/src/generated/
 *.tsbuildinfo
 pnpm-debug.log
 .pnpm-store/

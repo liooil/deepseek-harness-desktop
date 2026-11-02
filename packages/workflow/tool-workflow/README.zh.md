@@ -79,8 +79,6 @@ kind: "package-reference"
 
 引擎的 `workflow/phase` 与 `workflow/log` 事件在本工具没有逐行的持久面：会话日志刻意只记录 run 与成员生命周期，Web transcript 由这些记录派生。后台运行的这些行改经任务观察 record 抵达人类，而 record 的瞬态是设计使然。
 
-引擎的 `workflow/phase` 与 `workflow/log` 事件在本工具没有逐行的持久面：会话日志刻意只记录 run 与成员生命周期，Web transcript 由这些记录派生。后台运行的这些行改经任务观察 record 抵达人类，而 record 的瞬态是设计使然。
-
 ### 渲染意图
 
 按[渲染意图 Agent Note](../../../.agents/notes/implemented/architecture/2026-07-02-tool-render-intent-union.zh.md)预先确定：使用 `generic` 卡片，标题为 `workflow: <meta.name>`，直接从 `args.meta.name` 读取——呈现是参数的纯函数——脚本文本作为 `rawInput` 携带。结果继续使用 generic 卡片。

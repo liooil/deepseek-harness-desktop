@@ -73,8 +73,6 @@ async function main(): Promise<void> {
     node: nodeVersion,
     pnpm,
   }, undefined, 2)}\n`)
-  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
-    () => preparePrimaryRuntime({ deferSmoke: values['defer-primary-runtime-smoke'] }))
 }
 
 await main()

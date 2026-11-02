@@ -40,17 +40,10 @@ export {
   type ProfilePluginLocation, type ProfilePluginDependency, type ProfilePluginInventory, type ProfilePluginReconciliation,
 } from './profile-plugins.ts'
 
-export {
-  readProfilePlugins, reconcileProfilePlugins, writeProfileBundles,
-  type ProfilePluginLocation, type ProfilePluginDependency, type ProfilePluginInventory, type ProfilePluginReconciliation,
-} from './profile-plugins.ts'
-
 declare module '@deepseek-ai/cordis' {
   interface Context {
     /** Harness-home path resolver available to Loader `!!js` config expressions. */
     dshHomePath?: typeof dshHomePath
-    /** Optional filesystem resolver supplied by a packaged single-process host. */
-    dshRuntimePaths?: DshRuntimePaths
   }
 
   interface Events {
@@ -436,8 +429,6 @@ async function recompose(
       }
     }
   }
-  ctx.emit('app-boot/config-reload')
-  return failures.map(inactiveDiagnostic)
 }
 
 /** An inactive entry as a recomposition found it before changing anything. */
@@ -752,21 +743,16 @@ export async function mountRootInclude(
   bareModuleBaseUrl?: string,
   binName = 'dsh',
 ): Promise<Entry | undefined> {
-  if (bareModuleImporter !== undefined) {
-    ctx.loader.moduleImporter = bareModuleImporter
-  }
-  ctx.loader.builtins.include = bareModuleBaseUrl === undefined && bareModuleImporter === undefined
+  ctx.loader.builtins.include = bareModuleBaseUrl === undefined
     ? Include
     : class HostResolvedRootInclude extends Include {
       override import(name: string, getOuterStack?: () => string[]): unknown {
         const specifier = isAbsolute(name) ? pathToFileURL(name).href : name
         if (name.startsWith('.') || name.startsWith('cordis:')) return super.import(specifier, getOuterStack)
-        if (bareModuleImporter !== undefined) return bareModuleImporter(specifier)
         const internal = this.ctx.loader.internal
         /* v8 ignore next -- Node supplies the internal loader; this preserves the
            original diagnostic for hypothetical embedders without it. */
         if (internal === undefined) return super.import(specifier, getOuterStack)
-        if (bareModuleBaseUrl === undefined) throw new Error('app-boot: packaged module base is unavailable')
         return internal.import(specifier, bareModuleBaseUrl, {})
       }
     }
@@ -1218,7 +1204,6 @@ export async function boot(
   patches?: PatchOptions[],
   prepare?: (ctx: Context) => Promise<void> | void,
   bareModuleBaseUrl?: string,
-  bareModuleImporter?: (name: string) => unknown,
 ): Promise<Context> {
   const ctx = new Context()
   const startupLogs: StartupLogRecord[] = []
@@ -1237,11 +1222,6 @@ export async function boot(
   try {
     ctx.baseUrl = pathToFileURL(dirname(absoluteConfigPath)).href + '/'
     ctx.provide('dshHomePath', dshHomePath)
-    // Fiber.update() discards the restart promise. Observe it before the
-    // waterfall returns; activation audits still report the failed fiber.
-    ctx.on('internal/update', (_config, _noSave, next: () => unknown) => {
-      void Promise.resolve(next()).catch((error: unknown) => { ctx.logger.error(error) })
-    }, { global: true, prepend: true })
     await ctx.plugin(Loader)
     await prepare?.(ctx)
     stage = 'plugin tree failed to load'

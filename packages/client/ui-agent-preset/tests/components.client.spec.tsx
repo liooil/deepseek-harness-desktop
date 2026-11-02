@@ -159,17 +159,6 @@ describe('the new-session chip', () => {
     expect(screen.queryByRole('button')).toBeNull()
   })
 
-  it('renders only for a Session retained by the main view', () => {
-    renderSeat({}, undefined, {
-      id: 's1', retainInfo: { referenceCount: 1, retainedBy: { mainView: 1 } },
-    })
-    expect(screen.getByRole('button')).toBeTruthy()
-    cleanup()
-
-    renderSeat({}, undefined, { id: 's1', retainInfo: undefined })
-    expect(screen.queryByRole('button')).toBeNull()
-  })
-
   it('reads the roster once and shows the staged preset by name', async () => {
     const actions = renderSeat()
 

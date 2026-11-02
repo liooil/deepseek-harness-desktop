@@ -37,7 +37,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 import { Service } from '@deepseek-ai/cordis'
 import type { Context } from '@deepseek-ai/cordis'
-import type {} from '@deepseek-ai/dsh-app-boot'
 import type { Entry } from '@deepseek-ai/cordis-plugin-loader'
 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver'
 import { PACKAGE_ASSET_SEGMENT, packageAssetMediaType } from './assets.ts'
@@ -934,17 +933,6 @@ export class ClientModuleRegistry extends Service {
     const pathLike = loaderName.startsWith('.') || loaderName.startsWith('file:') || isAbsolute(loaderName)
     const expectedPackageName = pathLike ? undefined : exactPackageSpecifier(loaderName)
     if (!pathLike && expectedPackageName === undefined) return undefined
-    const runtimePaths = this.ctx.get('dshRuntimePaths')
-    if (runtimePaths !== undefined && expectedPackageName !== undefined) {
-      try {
-        return {
-          path: runtimePaths.resolvePackageJson(expectedPackageName),
-          packageName: expectedPackageName,
-        }
-      } catch {
-        return undefined
-      }
-    }
     const internal = this.ctx.loader.internal
     if (internal === undefined || typeof Reflect.get(internal, 'resolveSync') !== 'function') {
       if (expectedPackageName === undefined) {

@@ -616,9 +616,6 @@ export function decodeScheduleRecord(value: unknown): ScheduleRecord {
 /** Timing fields one fixed-rate decision needs from its record. */
 type EveryOccurrenceInput = Pick<EveryScheduleRecord, 'everySeconds' | 'scheduledAt'>
 
-/** Timing fields one fixed-rate decision needs from its record. */
-type EveryOccurrenceInput = Pick<EveryScheduleRecord, 'everySeconds' | 'scheduledAt'>
-
 /**
  * Resolve one fixed-rate decision without enumerating missed occurrences.
  * @param record - Active record whose target is the earliest unaccepted occurrence.

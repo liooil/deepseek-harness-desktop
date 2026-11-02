@@ -53,9 +53,7 @@ export default defineConfig({
       // The assembled Web snapshot executes generated client bundles; source
       // mode remains the zero-build path, while lib mode requires a prior build.
       ...(process.env.DSH_EXAMPLE_MODE === 'lib' ? ['apps/web/tests/**/*.snapshot.ts'] : []),
-      'apps/cli/tests/**/*.snapshot.ts',
-      'apps/desktop/tests/**/*.snapshot.ts',
-      'examples/*/tests/**/*.snapshot.ts',
+      'snapshots/**/*.snapshot.ts',
     ],
     // Replay never writes committed outputs and every scenario owns its
     // mutable runtime state (the subprocess suites use a unique temp dir and

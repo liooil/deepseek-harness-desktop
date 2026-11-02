@@ -47,10 +47,6 @@ An open conversation's header clock remains hidden before the first successful r
 
 Time-zone enumeration and localized names use the browser's embedded ICU/CLDR data through `Intl`. There is no runtime download. The editor retains a stored alias even when enumeration omits it, and uses the system zone plus UTC when enumeration is unavailable.
 
-### Time-zone data source
-
-Time-zone inventory and localization are offline. `Intl` reads ICU/CLDR tables embedded in the browser runtime and never fetches or downloads zone data while DSH runs. There is no crawler to refresh; a third-party locale supplies `time.locale` and translates only the selector's own UI copy.
-
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 

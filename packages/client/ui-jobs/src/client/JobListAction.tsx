@@ -373,10 +373,6 @@ export function JobListAction({ sessionId, useJobs, watchRows, observe, killJob,
   // lives, released with it.
   useEffect(() => watchRows(sessionId), [sessionId, watchRows])
 
-  // The roster follows the mounted session: one stream while this control
-  // lives, released with it.
-  useEffect(() => watchRows(sessionId), [sessionId, watchRows])
-
   // The clock only runs while an open list is showing something that moves.
   useEffect(() => {
     if (!open || liveRows.length === 0) return

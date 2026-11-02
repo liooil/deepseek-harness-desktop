@@ -515,7 +515,6 @@ const EXPECTED_TOOLS = [
 const RIPGREP_TOOLS = ['glob', 'grep']
 
 let scaffold: WebScaffold | undefined
-let childOverlayDirectory: string | undefined
 
 afterEach(async () => {
   try {

@@ -662,25 +662,6 @@ Source: [`packages/jobs/jobs/src/types.ts:59`](../packages/jobs/jobs/src/types.t
 
 Source: [`packages/jobs/jobs/src/types.ts:64`](../packages/jobs/jobs/src/types.ts)
 
-### `image/*`
-
-<a id="imageoffload--log-only"></a>
-
-#### `image/offload` — log-only
-
-```ts persistence-catalog
-/**
- * Permanently omit selected input-image occurrences from subsequent model requests.
- * Targets name unique current user/message or tool/result nodes. Nonempty, strictly
- * increasing indexes count all images in depth-first order, including nested tool
- * results and already omitted images. Message nodes and identities remain unchanged.
- * @messageProjection
- */
-'image/offload': { targets: ImageOffloadTarget[] }
-```
-
-Source: [`packages/compaction/compaction-image-offload/src/projection.ts:25`](../packages/compaction/compaction-image-offload/src/projection.ts)
-
 ### `llm/*`
 
 <a id="llmretry--log-only"></a>

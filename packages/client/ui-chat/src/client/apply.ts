@@ -250,7 +250,6 @@ export function apply(ctx: Context): void {
         if (binding === undefined) throw new Error(`ui-chat: unknown session "${sessionId}"`)
         const session = binding.session
         const chat = chatSource(binding)
-        const conversation = ctx.uiConversation.binding(binding)
         return {
           ...nodeSources(binding),
           fileDrag: ctx.fileDrag.actions,
@@ -279,13 +278,6 @@ export function apply(ctx: Context): void {
             await Promise.resolve()
           },
           resolveFilePath: sessionFilePath(ctx, sessionId),
-          openExternalLink: (url) => {
-            if (linkOpening.getSnapshot() === 'sidebar' && ctx.get('sidebarRightTabs')?.get('browser') !== undefined) {
-              ctx.sidebarRight.openTab('browser', { params: { url } })
-            } else {
-              window.open(url, '_blank', 'noopener,noreferrer')
-            }
-          },
           openExternalLink: (url) => {
             if (linkOpening.getSnapshot() === 'sidebar' && ctx.get('sidebarRightTabs')?.get('browser') !== undefined) {
               ctx.sidebarRight.openTab('browser', { params: { url } })

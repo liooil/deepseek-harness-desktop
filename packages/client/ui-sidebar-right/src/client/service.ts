@@ -372,12 +372,6 @@ export class SidebarRightController implements ISidebarRight {
     return Object.values(this.adopted.get(sessionId)?.store.getSnapshot().bySession[sessionId]?.layout.tabs ?? {})
   }
 
-  /** Publish the mounted session only when it changes; a republished binding for the same session is silent. */
-  private publishMounted(): void {
-    const next = this.binding?.sessionId
-    if (this.mountedSession.getSnapshot() !== next) this.mountedSession.set(next)
-  }
-
   /**
    * Open a resource: claim it, place it, reveal the column, record the navigation.
    * @param address - a `dsh-resource://<type>/…` address.

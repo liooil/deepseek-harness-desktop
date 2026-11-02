@@ -35,20 +35,6 @@ function checkpointSource(compactionId: string): CheckpointSource {
   return { kind: 'compact-checkpoint', compactionId: compactionId as CheckpointSource['compactionId'] }
 }
 
-declare module '@deepseek-ai/dsh-llm' {
-  interface MessageSourceMap {
-    'dsh-tool-skill': { kind: 'dsh-tool-skill' } & ContextFormed
-    'later-contribution': { kind: 'later-contribution' } & ContextFormed
-  }
-}
-
-type CheckpointSource = Extract<MessageSource, { readonly kind: 'compact-checkpoint' }>
-
-/** Build a typed checkpoint source for a skill projection fixture. */
-function checkpointSource(compactionId: string): CheckpointSource {
-  return { kind: 'compact-checkpoint', compactionId: compactionId as CheckpointSource['compactionId'] }
-}
-
 const testToolSignal = new AbortController().signal
 
 /** Every temp dir created by this file, removed after each test. */

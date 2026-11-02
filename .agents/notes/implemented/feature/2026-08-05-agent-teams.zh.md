@@ -62,14 +62,6 @@ Web panel 读取 Lead Session 的 `agentTeam` 传输投影，因为现有投影�
 
 发布要求 `apply` 对每个已应用的 Team 事件返回新的 state 对象，并只替换被触及的集合。仅邮箱的事件保留视图引用，不发布 frame。现有传输层将每个变化后的完整视图发送给所有已连接浏览器；包 README 记录了这项开销。
 
-## Web projection
-
-Web panel 读取 Lead Session 的 `agentTeam` 传输投影，因为现有投影流能持续更新浏览器状态，无需独立的 Team 读取 API。Lead 与 teammate 会话均从共享的跨 Session store 选择值。面板不负责投影读取：Session 加载、列表缓存值与控制基线提供数据。
-
-传输视图携带持久 roster phase、使用共享就绪与重叠派生逻辑的未删除任务视图，以及最后有效状态旁的 `failure`。实时活动来自 Session 状态。模型选择有自己的持久投影；面板展示共享 store 中可用的值，不打开成员会话。缺少的缓存值保持缺失，直到 Session 加载或实时更新提供它。
-
-发布要求 `apply` 对每个已应用的 Team 事件返回新的 state 对象，并只替换被触及的集合。仅邮箱的事件保留视图引用，不发布 frame。现有传输层将每个变化后的完整视图发送给所有已连接浏览器；包 README 记录了这项开销。
-
 ## Alternatives considered
 
 **用 peer id 扩展 direct-child subagent tool。** 拒绝，因为 parent／child 权限与 Team peer membership 是不同领域。向 continuation seam 增加 peer access 会削弱 exact-parent authorization，仍无法为 roster 与 task 提供持久 owner。
@@ -91,8 +83,6 @@ Web panel 读取 Lead Session 的 `agentTeam` 传输投影，因为现有投影�
 包测试覆盖 Team 权限、provisioning 持久性、任务转换、直接 inbox 接收、发送者归属、生命周期取消和历史 mailbox 可读性。无密钥 Team profile 快照固定 policy、工具与工作流；CLI 组合测试检查持久 Team 和 child 日志。
 
 模型可见的成员身份与可用状态遵循[工具投影说明](../../../../packages/experimental/tool-agent-team/README.zh.md)；服务驻留状态和持久身份仍保持区分。
-
-模型可见的成员身份与可用状态遵循[工具投影决策](../simplification/2026-09-15-model-agent-availability-and-team-targets.zh.md)；服务驻留状态和持久身份仍保持区分。
 
 ## Consequences
 

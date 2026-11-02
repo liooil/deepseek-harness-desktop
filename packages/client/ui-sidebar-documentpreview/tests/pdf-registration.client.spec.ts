@@ -20,8 +20,6 @@ import { en, ja, zh, es, fr, de, ru, pt } from '../src/client/pdf/locales.ts'
 
 afterEach(() => { cleanup(); renderedPdf.mockClear() })
 
-afterEach(() => { cleanup(); renderedPdf.mockClear() })
-
 describe('PDF registration', () => {
   it('shows localized loading feedback while the PDF chunk resolves', async () => {
     render(createElement(LazyPdfBody, { t: makeTranslate(en) } as never))

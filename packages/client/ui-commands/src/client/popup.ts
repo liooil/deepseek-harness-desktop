@@ -129,20 +129,6 @@ function currentIndex(options: readonly SelectOption[], search: string, mode: Po
   return at === -1 ? 0 : at
 }
 
-/**
- * Highlight index for a freshly loaded row list: the row marked as the current
- * value when the live search still shows it, else the top row. Opening parks
- * the highlight on the value the session already uses, so an accept gesture
- * made without looking confirms that value instead of the topmost row.
- * @param options - the loaded rows.
- * @param search - the shell's live filter text (non-empty after a retry).
- * @returns index into the filtered rows.
- */
-function currentIndex(options: readonly SelectOption[], search: string): number {
-  const at = filterOptions(options, search).findIndex(option => option.active === true)
-  return at === -1 ? 0 : at
-}
-
 /** One open shell's bindings (spec + open-time context + segment snapshot + options-fetch abort). */
 interface OpenBinding<TCtx> {
   readonly command: string

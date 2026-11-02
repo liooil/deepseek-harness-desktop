@@ -338,11 +338,6 @@ interface ToolOutputMap {
     timeoutMs: number;
     output: string;
   } | {
-    kind: "promoted";
-    jobId: string;
-    timeoutMs: number;
-    output: string;
-  } | {
     kind: "foreground";
     cwd: string;
     exitCode: number | null;

@@ -657,7 +657,6 @@ async function main(): Promise<void> {
     try { await backend.close() }
     finally { await Promise.all([operationJournal?.drain(500), reports]) }
   }
-  stopForRecovery = () => backend.close()
 
   const reconcileBackend = (): Promise<void> => {
     startup ??= (async () => {

@@ -200,10 +200,6 @@ describe('web e2e: settings modal and General preferences', () => {
       await trigger.waitFor({ timeout: 10_000 })
       expect(await trigger.getAttribute('aria-expanded')).toBe('false')
       const identity = row.locator('code')
-      if (repeatsTitle) {
-        expect(await identity.count()).toBe(0)
-        continue
-      }
       expect(await identity.textContent()).toBe(entryId)
       expect(await identity.getAttribute('title')).toBe(entryId)
     }

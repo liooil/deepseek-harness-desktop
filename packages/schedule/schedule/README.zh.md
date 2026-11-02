@@ -13,15 +13,17 @@ Schedule 在指定时间或按重复计划发送指令。可以请 Agent 创建�
 
 ## 目录
 
-- [使用此包](#use-this-package)
+- [使用本包](#use-this-package)
 - [理解实现](#understand-the-implementation)
-- [进一步阅读](#further-exploration)
+- [进一步探索](#further-exploration)
 - [模型体验](#model-experience)
 - [已知限制与后续工作](#known-limitations-and-deferred-work)
 - [开发备注](#dev-note)
 
+-----
+
 <a id="use-this-package"></a>
-## 使用此包
+## 使用本包
 
 告诉 Agent 要做什么，以及何时执行。例如：“每个工作日北京时间 09:00 提醒我检查部署状态。”检查返回任务中的名称、重复规则和投递目标。
 
@@ -180,8 +182,10 @@ v2 写入后，v1 程序会拒绝该存储。无效或有歧义的回执会被�
 
 </details>
 
+-----
+
 <a id="further-exploration"></a>
-## 进一步阅读
+## 进一步探索
 
 - [Schedule 子系统](../../../docs/subsystems/schedule.zh.md)——时间、管理、存储与投递契约。
 - [时间工具](../../util/time/README.zh.md)——Cron 与 RRULE 解析和发生时点计算。

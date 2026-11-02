@@ -298,28 +298,6 @@ describe('typert loader', () => {
     expect(ctx.typert.get('@fixture/actual#Aliased')).toBeDefined()
   })
 
-  it('skips package-subpath rows and validates npm aliases against the manifest owner', LOADER_TEST_TIMEOUT, async () => {
-    root = await mkdtemp(join(tmpdir(), 'dsh-typert-loader-'))
-    await linkZod(root)
-    await writePackage(root, '@fixture/subpath', {
-      pluginSubpath: './plugin',
-      typertSource: typertSource('@fixture/subpath', 'Subpath'),
-    })
-    await writePackage(root, 'fixture-alias', {
-      manifestName: '@fixture/actual',
-      typertSource: typertSource('@fixture/actual', 'Aliased'),
-    })
-    const ctx = await boot()
-    await ctx.loader.create({ name: '@fixture/subpath/plugin' })
-    await ctx.loader.create({ name: 'fixture-alias' })
-    await ctx.loader.await()
-
-    await mountTypertLoader(ctx)
-
-    expect(ctx.typert.getPackage('@fixture/subpath')).toBeUndefined()
-    expect(ctx.typert.get('@fixture/actual#Aliased')).toBeDefined()
-  })
-
   it('follows entries mounted after activation', LOADER_TEST_TIMEOUT, async () => {
     root = await mkdtemp(join(tmpdir(), 'dsh-typert-loader-'))
     await linkZod(root)

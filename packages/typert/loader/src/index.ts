@@ -408,10 +408,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const loadManifest = (pkgName: string, path: string): Promise<TypertContribution> => {
     let loading = manifests.get(pkgName)
     if (loading === undefined) {
-      const imported = ctx.loader.moduleImporter !== undefined
-        ? Promise.resolve(ctx.loader.moduleImporter(`${pkgName}/typert`, pathToFileURL(path).href))
-        : import(pathToFileURL(path).href)
-      loading = imported.then(
+      loading = import(pathToFileURL(path).href).then(
         (mod: Record<string, unknown>) => validateTypertManifest(pkgName, mod.TYPERT),
         (cause: unknown) => {
           throw new Error(

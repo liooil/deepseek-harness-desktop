@@ -56,7 +56,6 @@ export {
   SEARCH_STDERR_MAX_BYTES,
   SEARCH_TIMEOUT_MS,
   SearchError,
-  configureRipgrepPath,
   previewLine,
   resolveRgPath,
   runRipgrep,

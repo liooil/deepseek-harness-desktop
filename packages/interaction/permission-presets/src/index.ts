@@ -16,9 +16,7 @@ import type {} from '@deepseek-ai/dsh-agent'
 
 import type { Volatile } from '@deepseek-ai/cordis'
 
-import type { Volatile } from '@deepseek-ai/cordis'
-
-import { Context } from '@deepseek-ai/cordis'
+import { Context, Service } from '@deepseek-ai/cordis'
 import { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
 import z from '@deepseek-ai/schemastery'
 import { z as zod } from 'zod'

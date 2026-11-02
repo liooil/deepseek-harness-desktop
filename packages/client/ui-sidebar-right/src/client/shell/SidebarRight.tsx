@@ -53,7 +53,6 @@ import type { SidebarRightTabNavigation } from '../contract/slots.ts'
 import type { TabHookContext } from '../tab-info.ts'
 import { flashPane } from './flash.ts'
 import css from './SidebarRight.module.css'
-import { closeWithPaneFocus, openWithPaneFocus } from './close-focus.ts'
 
 /** The store share the seat receives. */
 type Store = PropsStore<ReturnType<typeof createSidebarRightStore>>

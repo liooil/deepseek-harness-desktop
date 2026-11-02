@@ -384,10 +384,6 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
       ? active : null
   }, [open])
 
-  // Opening remembers where the keyboard was, so closing can hand it back to
-  // that control — an anchor wrapping several (a split button) cannot be asked
-  // for it by position. Declared before the autoFocus effect so the capture
-  // sees the trigger, not the row autoFocus is about to focus.
   useEffect(() => {
     if (!open || exiting !== undefined || (portal && fixedPos === null) || !autoFocus
       || listRef.current?.contains(document.activeElement)) return

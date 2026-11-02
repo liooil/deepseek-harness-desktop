@@ -2,21 +2,10 @@
 
 English | [中文](README.zh.md)
 
-Python subprocess SDK for driving DeepSeek Harness over JSON-RPC stdio. This
-fork does not publish the SDK or its runtime wheels to PyPI; they are internal
-development and CI artifacts. End users should download the matching desktop
-executable from the [GitHub Releases](https://github.com/liooil/deepseek-harness-desktop/releases)
-page. The runtime inherits normal DeepSeek Harness environment variables such
-as `DEEPSEEK_BASE_URL` and `DEEPSEEK_API_KEY`, so local callers can use real
-model endpoints directly or point those variables at a local proxy.
-
-For repository-local validation, build the host runtime and sync the editable
-SDK environment:
+Python subprocess SDK for driving DeepSeek Harness over newline-delimited JSON-RPC on stdio. Install `deepseek-harness-sdk`; it installs the exact same-version `deepseek-harness-runtime-bin` wheel for the current platform.
 
 ```sh
-pnpm install
-pnpm exec tsx scripts/build-exe-for-python-sdk.ts
-uv sync --project python/sdk
+python -m pip install deepseek-harness-sdk
 ```
 
 ## Optional Office operations
@@ -138,7 +127,7 @@ with DeepSeekHarness(
 
 `profile` may select another existing profile, but that composition must retain `@deepseek-ai/dsh-sdk-app` or another `@deepseek-ai/dsh-sdk-jsonrpc-server` row. Misconfiguration fails during CLI boot or SDK initialization; there is no complete-config fallback. `dsh_bin` may select another `dsh` executable while preserving the same profile grammar. Arbitrary argv replacement remains an internal fake-runtime test adapter, not public API.
 
-The [Python SDK tutorial](https://github.com/liooil/deepseek-harness-desktop/blob/master/docs/user/guide/python-sdk.md) provides an ordered local-build and first-run path without the Web UI. The [`jsonrpc-agent` example](https://github.com/liooil/deepseek-harness-desktop/blob/master/examples/jsonrpc-agent/README.md) owns the complete standalone Cordis file used there.
+`provider` selects a provider route registered by the chosen Cordis composition; `model` is the model id resolved by that adapter. `reasoning_effort` is an optional non-empty adapter-owned identifier for that exact route; omission preserves the model's own default. `max_tokens` is an optional positive per-request output-token cap for the root agent and its in-process descendants; omission leaves the provider default in control. Initialization rejects a missing adapter, unavailable model, or unsupported effort before a prompt runs. Compaction summaries keep the separate limit configured by their compaction plugin. The bundled default composition registers `deepseek-official`. A custom composition can mount `llm-pi-ai`, configure provider-specific credentials/endpoints there, and select any provider/model present in pi-ai's installed catalog.
 
 The shipped `sdk-minimal` profile is a standalone explicit tree rather than an overlay on `dsh-base`. Select it with `profile="sdk-minimal"`; the ordinary `model` argument is the sole runtime model selection, including for model ids outside the adapter's advisory catalog. It provides a platform-selected persistent shell, `read_image`, `working_directory`, local execution, JSONL sessions, and automatic compaction. Text file tools, settings, managed credentials, telemetry, Web tools, and the full default tool roster remain available through the separate full `sdk` and `web` profiles. The `sdk-minimal` profile leaves unsupported slash input on the ordinary prompt path.
 

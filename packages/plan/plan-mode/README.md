@@ -108,8 +108,6 @@ The unit turns logged `/plan` command runs into a candidate target, commits the 
 
 The review intent carries the originating tool-call id, so the Web client can reopen the same submitted plan after the review closes. The complete Markdown remains in the existing native call or PTC dispatch log.
 
-The review intent carries the originating tool-call id, so the Web client can reopen the same submitted plan after the review closes. The complete Markdown remains in the existing native call or PTC dispatch log.
-
 </details>
 
 -----

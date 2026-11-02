@@ -19,12 +19,6 @@ export type { TooltipSide } from './tooltip-placement.ts'
  */
 export const TooltipSuppression = createContext<((suppressed: boolean) => void) | null>(null)
 
-/**
- * Suppression channel for enclosing tooltip and hover-card anchors: a visible
- * tooltip within an anchor withdraws the enclosing preview while its bubble is shown.
- */
-export const TooltipSuppression = createContext<((suppressed: boolean) => void) | null>(null)
-
 /** Props Tooltip injects into its anchor child; the child's own handlers are chained ahead of the tooltip's. */
 interface AnchorProps {
   'aria-describedby'?: string | undefined

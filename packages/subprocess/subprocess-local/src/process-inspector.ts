@@ -3,6 +3,7 @@
 import { closeSync, openSync, readFileSync, readdirSync, readlinkSync, readSync, statSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import type { SubprocessTerminalSignal } from '@deepseek-ai/dsh-subprocess'
+import { createWindowsProcessInspector } from './windows-inspector.ts'
 
 /** PID plus start identity, preventing teardown escalation after PID reuse. */
 export interface ProcessIdentity {
@@ -532,11 +533,11 @@ class MacProcessInspector extends PosixProcessInspector {
 }
 
 /**
- * Create a POSIX platform inspector or fail for an unsupported platform.
+ * Create the supported platform inspector or fail at plugin load.
  * @param platform - target Node platform.
  * @param arch - target CPU architecture for Linux syscall numbers.
  * @param internals - filesystem/process boundary, injectable for deterministic tests.
- * @returns POSIX process inspector.
+ * @returns Platform process inspector.
  */
 export function createProcessInspector(
   platform: NodeJS.Platform = process.platform,
@@ -545,24 +546,6 @@ export function createProcessInspector(
 ): ProcessInspector {
   if (platform === 'linux') return new LinuxProcessInspector(arch, internals)
   if (platform === 'darwin') return new MacProcessInspector(internals)
+  if (platform === 'win32') return createWindowsProcessInspector()
   throw new Error(`subprocess-local: terminal inspection is unsupported on platform ${platform}`)
-}
-
-/**
- * Create the host process inspector while loading Windows-only bindings only on Windows.
- * @param platform - target Node platform.
- * @param arch - target CPU architecture for Linux syscall numbers.
- * @param internals - filesystem/process boundary, injectable for deterministic POSIX tests.
- * @returns Host process inspector after platform-only modules load.
- */
-export async function createRuntimeProcessInspector(
-  platform: NodeJS.Platform = process.platform,
-  arch: NodeJS.Architecture = process.arch,
-  internals: ProcessInspectorInternals = DEFAULT_INTERNALS,
-): Promise<ProcessInspector> {
-  if (platform === 'win32') {
-    const { createWindowsProcessInspector } = await import('./windows-inspector.ts')
-    return createWindowsProcessInspector()
-  }
-  return createProcessInspector(platform, arch, internals)
 }

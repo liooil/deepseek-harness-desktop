@@ -616,13 +616,6 @@ declare module '@deepseek-ai/dsh-workspace/types' {
   }
 }
 
-declare module '@deepseek-ai/dsh-workspace/types' {
-  interface SessionActivityKindMap {
-    /** A scheduled follow-up for this session is still active. */
-    schedule: true
-  }
-}
-
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
     /**

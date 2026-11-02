@@ -47,15 +47,6 @@ export function desktopTargetBuildPaths(target, environment = process.env) {
   if (!cacheRoot.trim() || !isAbsolute(cacheRoot) || cacheRoot.includes('\0')) {
     throw new Error('desktop package: DSH_DESKTOP_PACKAGE_CACHE_DIR must be a nonempty absolute directory')
   }
-}
-
-/**
- * Return the mutable preparation and artifact directories owned by one release target.
- * @param {'mac-arm64' | 'mac-x64' | 'win-x64'} target - Supported Desktop target name.
- * @returns {{ root: string, artifacts: string, unsignedArtifacts: string, runtime: string, packageSet: string, dsh: string, dshPnpm: string, electron: string, packedDsh: string, packedVendor: string, packedLandlock: string, downloads: string }} Target paths plus the shared immutable download cache.
- */
-export function desktopTargetBuildPaths(target) {
-  assertSupportedTarget(target)
   const root = join(BUILD_ROOT, 'targets', target)
   const packed = join(root, 'packed')
   return {
@@ -134,21 +125,4 @@ export function desktopArtifactOutput(paths, mode) {
   if (mode.unsigned) return { directory: paths.unsignedArtifacts, suffix: '-unsigned' }
   if (mode.skipNotarization) return { directory: paths.unnotarizedArtifacts, suffix: '-unnotarized' }
   return { directory: paths.artifacts, suffix: '' }
-}
-
-/**
- * Resolve the primary-runtime directory an unpackaged development launch uses.
- * The build target fixes Windows to x64, so the shell cannot derive this directory from
- * the architecture of the process that launched it.
- * @param {NodeJS.ProcessEnv} env - Packaging environment.
- * @param {NodeJS.Platform} hostPlatform - Build-host platform used when no target override exists.
- * @param {string} hostArch - Build-host architecture used when no target override exists.
- * @returns {string} Primary-runtime directory prepared for the selected target.
- */
-export function developmentRuntimeDirectory(
-  env = process.env,
-  hostPlatform = process.platform,
-  hostArch = process.arch,
-) {
-  return join(resolveDesktopTargetBuildPaths(env, hostPlatform, hostArch).runtime, 'primary-runtime')
 }

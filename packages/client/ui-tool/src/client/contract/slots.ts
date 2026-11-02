@@ -42,23 +42,6 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   }
 }
 
-/** Subscribe to this preparing call's raw argument prefix; other phases return an empty string. */
-export type UseToolCallArgumentsPartial = () => string
-
-/** Call-local sources supplied by the Tool tree to the slot's Hook binding. */
-export interface ToolCallHookContext {
-  readonly callId: string
-  /** This call's Step source, present only while preparing. */
-  readonly assistant: HostObservable<Readonly<AssistantChatData> | undefined> | undefined
-}
-
-/** Framework-bound subscriptions available to atomic Tool views on demand. */
-export interface ToolCallInjected {
-  hooks: {
-    toolCallArgumentsPartial: SlotHookFactory<'tool.call.toolview', UseToolCallArgumentsPartial>
-  }
-}
-
 /** Owner currency of the Tool image gallery slot: references plus the loader. */
 export interface ToolImagesOwnerProps {
   /** Durable references or submission-echo previews in result order. */

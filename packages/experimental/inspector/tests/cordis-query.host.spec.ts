@@ -28,7 +28,7 @@ describe('consumer-neutral Cordis tree', () => {
     store.replace(source, [{
       sequence: 1,
       monotonicMs: 1,
-      topic: '@deepseek-ai/cordis/tree',
+      topic: 'cordis/tree',
       payload: asJson({
         schemaVersion: 0,
         revision: 3,
@@ -72,7 +72,7 @@ describe('consumer-neutral Cordis tree', () => {
     store.replace(reconnected, [{
       sequence: 1,
       monotonicMs: 2,
-      topic: '@deepseek-ai/cordis/tree',
+      topic: 'cordis/tree',
       payload: asJson({
         schemaVersion: 0,
         revision: 4,

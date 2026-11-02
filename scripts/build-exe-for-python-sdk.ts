@@ -430,14 +430,6 @@ class SingleExeBuild {
     if (!this.cli.dryRun && !existsSync(product)) {
       throw new Error(`build-exe-for-python-sdk: product ${product} is missing after the pkg run; inspect ${this.outDir}.`)
     }
-    const office = `${productBase}-office`
-    if (this.cli.dryRun) {
-      console.log(`build-exe-for-python-sdk: [dry-run] copy Office dependency closure from ${this.staging} to ${office}`)
-    } else {
-      const platform = target.platform === 'macos' ? 'darwin' : target.platform === 'win' ? 'win32' : target.platform
-      const packages = await copyOfficeSidecar(this.staging, office, { platform, arch: target.arch })
-      console.log(`build-exe-for-python-sdk: copied ${packages.length} Office packages to ${office}`)
-    }
     const ripgrep = await this.copyRipgrepSidecar(target, product)
     const resources = join(this.outDir, `${target.platform}-${target.arch}`)
     if (this.cli.dryRun) {

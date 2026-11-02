@@ -15,9 +15,6 @@ import { MockAdapter, textResponse } from '../../../core/agent-loop/tests/mock-a
 /** Empty offset readers for fakes that never produce output. */
 const silentReader = { readFrom: (fromByte: number) => ({ text: '', nextOffset: fromByte, lossy: false }) }
 
-/** Empty offset readers for fakes that never produce output. */
-const silentReader = { readFrom: (fromByte: number) => ({ text: '', nextOffset: fromByte, lossy: false }) }
-
 const SIGNAL = new AbortController().signal
 
 /** One `#{...}`-joined tmux reading line for the eight queried fields. */

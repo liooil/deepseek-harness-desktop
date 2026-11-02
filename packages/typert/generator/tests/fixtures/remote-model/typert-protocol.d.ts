@@ -115,14 +115,6 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     dispose(): void
   }
 
-  export type RemoteStream<Out, In = never> = AsyncIterable<Out> & { readonly uplinkItem?: In }
-
-  export interface RemoteStreamHandle<Out, In> extends AsyncIterable<Out> {
-    send(item: In): void
-    end(): void
-    dispose(): void
-  }
-
   export abstract class TypertRemoteService {
     readonly typertRemote: {
       readonly service: TypertRemoteService

@@ -55,8 +55,6 @@ Catalogs cache per ordinary session with a single-flight fetch; the scope-birth 
 
 Each catalog fetch requires an existing retained Client Session and waits for its initial history open to succeed before sending `skills/list`. A temporary `skillCatalog` reference holds that Session until the fetch settles. An unretained Session or a failed open rejects without sending the RPC; preset invalidation, plugin manager operations, connection reset, and plugin disposal also cancel a pending history wait.
 
-Each catalog fetch requires an existing retained Client Session and waits for its initial history open to succeed before sending `skills/list`. A temporary `skillCatalog` reference holds that Session until the fetch settles. An unretained Session or a failed open rejects without sending the RPC; preset invalidation, connection reset, and plugin disposal also cancel a pending history wait.
-
 ### Registration
 
 The `/client` exports are the plugin body (`apply`/`inject`) only; the source object is internal to the registration effect. The tool row registers the `skill` wire name in ui-tool's keyed `tool.call.toolview` slot.

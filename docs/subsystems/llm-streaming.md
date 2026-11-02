@@ -636,23 +636,6 @@ interface RequestUserInput {
 }
 ```
 
-Auxiliary callers can provide user content without a durable identity or source. Existing `Message[]` histories remain valid request inputs. Session writes, Agent delivery, and recorded title requests continue to require durable messages.
-
-```ts type-equiv
-/** User input for one LLM request; it has no durable Session identity or source. */
-interface RequestUserInput {
-  readonly role: 'user'
-  readonly content: UserMessage['content']
-  readonly id?: never
-  readonly source?: never
-}
-```
-
-```ts type-equiv
-/** A durable conversation message or a user input used only for one request. */
-type RequestMessage = Message | RequestUserInput
-```
-
 ```ts type-equiv
 /** A durable conversation message or a user input used only for one request. */
 type RequestMessage = Message | RequestUserInput

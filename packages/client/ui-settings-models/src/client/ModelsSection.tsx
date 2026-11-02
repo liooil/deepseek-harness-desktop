@@ -112,18 +112,6 @@ interface CatalogDraft {
   namespace: SettingsNamespaceView
 }
 
-/** A dormant directory row the add card can adopt, with its registered namespace. */
-interface AddableRow {
-  row: ProviderRow
-  namespace: SettingsNamespaceView
-}
-
-/** The catalog draft the add card shows: its editor target and the namespace that takes the write. */
-interface CatalogDraft {
-  target: EditorTarget
-  namespace: SettingsNamespaceView
-}
-
 /** Values that vary around the shared provider-editor rendering. */
 interface ProviderEditorRenderProps extends Pick<
   ProviderEditorProps,

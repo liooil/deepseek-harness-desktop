@@ -82,22 +82,6 @@ describe('desktop build paths', () => {
     expect(() => desktopTargetPlatform('linux-x64' as 'mac-x64')).toThrow(/unsupported target/u)
   })
 
-  it('resolves the development primary runtime from the build target rather than the host architecture', () => {
-    expect(developmentRuntimeDirectory({}, 'darwin', 'arm64'))
-      .toContain(join('targets', 'mac-arm64', 'runtime', 'primary-runtime'))
-    expect(developmentRuntimeDirectory({}, 'darwin', 'x64'))
-      .toContain(join('targets', 'mac-x64', 'runtime', 'primary-runtime'))
-    expect(developmentRuntimeDirectory({}, 'win32', 'arm64'))
-      .toContain(join('targets', 'win-x64', 'runtime', 'primary-runtime'))
-  })
-
-  it('maps every target to the platform and architecture of the payload it prepares', () => {
-    expect(desktopTargetPlatform('mac-arm64')).toEqual({ platform: 'darwin', arch: 'arm64' })
-    expect(desktopTargetPlatform('mac-x64')).toEqual({ platform: 'darwin', arch: 'x64' })
-    expect(desktopTargetPlatform('win-x64')).toEqual({ platform: 'win32', arch: 'x64' })
-    expect(() => desktopTargetPlatform('linux-x64' as 'mac-x64')).toThrow(/unsupported target/u)
-  })
-
   it('resolves environment overrides and rejects unsupported targets', () => {
     expect(resolveDesktopBuildTarget({
       DSH_DESKTOP_TARGET_PLATFORM: 'darwin',

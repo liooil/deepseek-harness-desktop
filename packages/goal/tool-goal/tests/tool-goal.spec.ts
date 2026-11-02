@@ -30,12 +30,6 @@ declare module '@deepseek-ai/dsh-llm' {
   }
 }
 
-declare module '@deepseek-ai/dsh-llm' {
-  interface MessageSourceMap {
-    'test': { kind: 'test' } & ContextFormed
-  }
-}
-
 const testToolSignal = new AbortController().signal
 const testContexts: Context[] = []
 

@@ -574,34 +574,6 @@ describe('canOpenOf', () => {
     unsubscribe()
     expect(listeners.size).toBe(0)
   })
-
-  it('manually refreshes expanded nodes while preserving cached levels, scroll, and the automatic setting', async () => {
-    const { face, watches, settle, waitForList, snapshot, controller, actions } = mount()
-    const child = `${ROOT}/src`
-    const collapsed = `${ROOT}/docs`
-    face.start(TAB, ROOT, controller.signal)
-    await watches.ready(ROOT)
-    await settle({ ok: true, value: LEVEL })
-    face.toggle(TAB, ROOT, child, snapshot()!.expanded, controller.signal)
-    await watches.ready(child)
-    await settle({ ok: true, value: LEVEL })
-    actions.loaded(TAB, collapsed, LEVEL)
-    actions.scrolled(TAB, 120)
-    face.setAutoRefresh(TAB, false)
-    const cached = snapshot()!
-
-    face.refresh(TAB)
-    expect((await waitForList(2)).path).toBe(ROOT)
-    expect(snapshot()!.levels).toEqual(cached.levels)
-    await settle({ ok: true, value: LEVEL })
-    expect((await waitForList(3)).path).toBe(child)
-    expect(snapshot()!.levels[child]).toEqual(cached.levels[child])
-    await settle({ ok: true, value: { entries: [], truncated: false } })
-    expect(snapshot()!.levels[collapsed]).toEqual(cached.levels[collapsed])
-    expect(snapshot()).toMatchObject({ expanded: [ROOT, child], scrollTop: 120, autoRefresh: false })
-    expect(watches.opened.map(stream => stream.path)).toEqual([ROOT, child])
-    expect(watches.opened.every(stream => !stream.signal.aborted)).toBe(true)
-  })
 })
 
 describe('createList', () => {

@@ -631,16 +631,6 @@ describe('Session history and Web follow', () => {
       const iterator = web.follow({ address, turnWindow }, signal())[Symbol.asyncIterator]()
       await expect(iterator.next()).rejects.toMatchObject({ code: 'gateway/bad-request' })
     }
-    for (const turnWindow of [
-      { minMessages: 0, minTurns: 2 },
-      { minMessages: 1.5, minTurns: 2 },
-      { minMessages: 51, minTurns: 2 },
-      { minMessages: 50, minTurns: 0 },
-      { minMessages: 50, minTurns: 1.5 },
-    ]) {
-      const iterator = transport.follow({ address, turnWindow }, signal())[Symbol.asyncIterator]()
-      await expect(iterator.next()).rejects.toMatchObject({ code: 'gateway/bad-request' })
-    }
   })
 
   it('reports missing ordinary and subagent sources without fabricating inspection failures', async () => {

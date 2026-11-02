@@ -170,15 +170,6 @@ export async function runDesktopUploadCommand(args: string[]): Promise<void> {
     output.write(`${message}\n`)
     process.exitCode = 1
   }
-  const result = tagDesktopRelease({ version: plan.version, commit: plan.commit, repositoryRoot: resolve(import.meta.dirname, '../../..') })
-  if (result.status === 'failed') {
-    process.stderr.write(`desktop upload: the release is published but ${result.tag} was not recorded: ${result.detail ?? 'unknown error'}\n`)
-    if (result.recovery !== undefined) {
-      process.stderr.write(`desktop upload: record it with: ${result.recovery.join(' && ')}\n`)
-    }
-    return
-  }
-  process.stdout.write(`desktop upload: ${result.tag} ${result.status === 'created' ? 'records' : 'already recorded'} ${plan.commit}\n`)
 }
 
 if (process.argv[1] !== undefined && import.meta.filename === resolve(process.argv[1])) {

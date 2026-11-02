@@ -1,12 +1,13 @@
 name: Build single-exe
 
-# Native builds for the internal Python runtime checks; see
+# Native builds for the release targets; see
 # .agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.md.
 # A full target run retains one SDK wheel and five runtime wheels; subset
 # dispatch retains the SDK wheel and selected runtime wheels. Bare executables
-# and source closures are test inputs. Run manually, label a PR `build-exe`
-# (remove and reapply to rerun), or call it from CI.
-# Checkout uses the triggering ref, so dispatch needs no separate ref input.
+# and source closures are test inputs. Run manually or call it from the Python
+# release workflow. There is no `pull_request` trigger: a label trigger would
+# list gray skipped checks on every unrelated PR label event. Checkout uses the
+# triggering ref, so dispatch needs no separate ref input.
 on:
   workflow_call:
     inputs:
@@ -15,6 +16,11 @@ on:
         type: string
         required: false
         default: ''
+      release:
+        description: Run as the native builder for the Python release workflow.
+        type: boolean
+        required: false
+        default: false
       ci:
         description: Run Python runtime CI validation for the selected targets.
         type: boolean
@@ -34,7 +40,7 @@ on:
 concurrency:
   # Keep the called workflow distinct from its caller's concurrency group;
   # github.workflow identifies the caller inside a reusable workflow and keeps
-  # an ordinary CI run from cancelling a full runtime validation on the same ref.
+  # an ordinary CI run from cancelling a full release validation on the same ref.
   group: build-single-exe-${{ github.workflow }}-${{ github.ref }}
   # Release-owned builds are part of an intentional publication transaction.
   cancel-in-progress: ${{ !inputs.release }}
@@ -129,7 +135,7 @@ jobs:
       - name: Install Python build tooling
         run: python -m pip install uv==0.11.23
 
-      - name: Build local SDK wheel for validation
+      - name: Build release-shaped SDK wheel
         run: >-
           python scripts/build-python-release.py
           --package sdk
@@ -301,7 +307,7 @@ jobs:
           "exe=$exe" >> $env:GITHUB_OUTPUT
           "wheel=$wheel" >> $env:GITHUB_OUTPUT
 
-      - name: Build local runtime wheel for validation
+      - name: Build release-shaped runtime wheel
         run: >-
           python scripts/build-python-release.py
           --package runtime

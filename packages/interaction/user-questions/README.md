@@ -65,8 +65,6 @@ No direct invalidation; the named consumer owns any request-prefix changes.
 
 None.
 
-The optional plan-review `callId` identifies the logged tool invocation for document navigation. It does not change the answer or its validation.
-
 </details>
 
 **Runtime invariant:** the `userQuestions` projection is derived from recorded tool calls, PTC dispatches, and admitted user messages; no separate question state is stored. A continued question can create a new user turn, but it cannot resume a finished tool call.

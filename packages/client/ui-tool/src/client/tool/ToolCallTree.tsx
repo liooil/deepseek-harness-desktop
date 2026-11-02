@@ -27,10 +27,6 @@ const ToolCall = memo(function ToolCall({
   home?: string | undefined
   children?: ReactNode
 }) {
-  const preparing = call.phase === 'preparing'
-  const hookContext = useMemo<ToolCallHookContext>(() => ({
-    callId, assistant: preparing ? assistant : undefined,
-  }), [assistant, callId, preparing])
   const owner: ToolCallOwnerProps = useMemo(() => ({
     callId,
     toolName,
@@ -68,7 +64,6 @@ const ToolCallBranch = memo(function ToolCallBranch({
 }: Pick<ToolTreeProps, 'renderSlot' | 'cwd' | 'openFile' | 'inspectCall' | 'loadImage' | 'useDisclosure'> & {
   renderFallback: (owner: ToolCallOwnerProps) => ReactNode
   block: ToolCallBlock
-  assistant: ToolCallHookContext['assistant']
   home?: string | undefined
 }) {
   const call = useMemo(() => toolCallPhase(block), [block])
@@ -93,7 +88,6 @@ const ToolCallBranch = memo(function ToolCallBranch({
               key={child.callId}
               renderSlot={renderSlot}
               block={child}
-              assistant={assistant}
               cwd={cwd}
               home={home}
               openFile={openFile}

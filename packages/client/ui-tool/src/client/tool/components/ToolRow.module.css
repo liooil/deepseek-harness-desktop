@@ -21,7 +21,6 @@
 
 .title {
   font-weight: 400;
-  transition: color 100ms ease;
 }
 
 .sep {
@@ -114,7 +113,6 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
   cursor: pointer;
-  transition: color 100ms ease;
 }
 
 /* Error row's collapsed summary: the failure's first line in the error color. */
