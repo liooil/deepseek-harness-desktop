@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-desktop-bundesk",
-  "version": "0.2.0-rc.1",
+  "version": "0.2.2-alpha.2",
   "private": true,
   "type": "module",
   "description": "Single-file Bun desktop distribution of the DeepSeek Harness over a BunDesk window host",
