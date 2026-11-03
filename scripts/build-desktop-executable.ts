@@ -39,12 +39,12 @@ interface BunDeskBuildRuntime {
 
 interface BunPluginBuilder {
   onLoad(
-    options: { filter: RegExp },
+    options: { filter: RegExp; namespace?: string },
     loader: () => { contents: string; loader: 'js' },
   ): void
   onResolve(
-    options: { filter: RegExp },
-    resolve: () => { path: string },
+    options: { filter: RegExp; namespace?: string },
+    resolve: () => { path: string; namespace?: string },
   ): void
 }
 
@@ -353,7 +353,7 @@ class DesktopExecutableBuild {
       outfile: this.cli.target.output,
       target: this.cli.target.bunTarget,
       minify: true,
-      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin()],
+      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin(), this.requireBuiltinPlugin()],
       define: {
         DSH_DESKTOP_VERSION: JSON.stringify(version),
         'globalThis.DSH_DESKTOP_VERSION': JSON.stringify(version),
@@ -380,6 +380,31 @@ class DesktopExecutableBuild {
     console.log(
       `build-desktop-executable: product ${result.outfile} (${formatSize(result.size)}, sha256=${result.sha256})`,
     )
+  }
+
+  /**
+   * Replace the Loader's `node-addon-require-builtin` dependency: a compiled
+   * executable already carries builtins, so `createRequire` serves the same
+   * `requireBuiltin` contract without a native addon.
+   */
+  private requireBuiltinPlugin(): BunBuildPlugin {
+    const namespace = 'dsh-require-builtin'
+    return {
+      name: 'dsh-desktop-require-builtin',
+      setup(builder) {
+        builder.onResolve({ filter: /^node-addon-require-builtin$/ }, () => ({ path: 'require-builtin', namespace }))
+        builder.onLoad({ filter: /.*/, namespace }, () => ({
+          contents: [
+            "import { createRequire } from 'node:module'",
+            'const hostRequire = createRequire(import.meta.url)',
+            '/** Require one Node builtin module from the compiled host. */',
+            'export function requireBuiltin(id) { return hostRequire(id) }',
+            'export default { requireBuiltin }',
+          ].join('\n'),
+          loader: 'js',
+        }))
+      },
+    }
   }
 
   private sharpBindingPlugin(): BunBuildPlugin {
