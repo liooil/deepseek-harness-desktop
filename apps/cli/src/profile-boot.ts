@@ -28,6 +28,7 @@ import {
   PROFILE_PATCH_FILENAME,
   resolveProfileDir,
   type ProfileContext,
+  type DshRuntimePaths,
   type Profile,
   type RuntimeResolution,
 } from '@deepseek-ai/dsh-app-boot'
@@ -226,10 +227,11 @@ async function composeProfile(
   patchFiles: readonly string[],
   fromDefaultProfile?: string,
   resolvedProfile?: ResolvedProfileRuntime,
+  installAnchor?: string,
 ): Promise<ComposedProfile> {
   const profile = resolvedProfile?.profile ?? prepareProfile(name, true, fromDefaultProfile)
   if (resolvedProfile !== undefined) writeFileSync(join(profile.dir, PROFILE_ROOT_FILENAME), PROFILE_ROOT_CONFIG)
-  const resolutionOptions = { installAnchor: resolvedProfile?.installAnchor ?? INSTALL_ANCHOR, profile }
+  const resolutionOptions = { installAnchor: installAnchor ?? resolvedProfile?.installAnchor ?? INSTALL_ANCHOR, profile }
   const resolution = await createRuntimeResolution(resolutionOptions)
   const overlays = patchFiles.flatMap(file => loadOverlayPatches(NAME, resolve(file)))
   return { profile, resolution, overlays }
@@ -251,6 +253,12 @@ export interface RunProfileOptions {
   profile: string
   /** Loaded application profile; bypasses named profile initialization when supplied. */
   resolvedProfile?: ResolvedProfileRuntime | undefined
+  /** Absolute package.json path of the packaged host's dsh installation. */
+  installAnchor?: string | undefined
+  /** Host importer for bare plugin specifiers compiled into a packaged host. */
+  bareModuleImporter?: ((name: string) => unknown) | undefined
+  /** Filesystem resources kept outside a compiled plugin graph. */
+  runtimePaths?: DshRuntimePaths | undefined
   /** Shipped template that replaces the named profile before boot. */
   fromDefaultProfile?: string | undefined
   /** `--patch` overlay paths, in argv order. */
@@ -290,7 +298,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
   })()
   try {
     const composed = await composeProfile(
-      options.profile, options.patchFiles, options.fromDefaultProfile, options.resolvedProfile,
+      options.profile, options.patchFiles, options.fromDefaultProfile, options.resolvedProfile, options.installAnchor,
     )
     const appReady = createAppReady()
     const shutdown = createProcessShutdown(dispose)
@@ -315,7 +323,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
       name: options.profile,
       ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
       dir: composed.profile.dir, patchPath: composed.profile.patchPath,
-      installAnchor: options.resolvedProfile?.installAnchor ?? INSTALL_ANCHOR,
+      installAnchor: options.installAnchor ?? options.resolvedProfile?.installAnchor ?? INSTALL_ANCHOR,
       startedBundles: composed.profile.layers.map(layer => layer.packageName),
       cwd: process.cwd(), home: resolveDshHome(),
       overlays: composed.overlays, telemetryDisabledEnv: process.env.DSH_TELEMETRY_DISABLED,
@@ -336,7 +344,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
         exit: code => void shutdown.shutdown(code),
         ready: appReady.service,
       })
-    })
+    }, undefined, options.bareModuleImporter, options.runtimePaths)
     app.current = ctx
     if (!signalShutdown.signal.aborted
       && ctx.fiber.state === FiberState.ACTIVE
