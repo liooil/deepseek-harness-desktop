@@ -292,6 +292,7 @@ class DesktopExecutableBuild {
     const configPaths = globSync([
       'apps/cli/config/**/*.{yml,yaml}',
       'packages/*/*/cordis.patch.yml',
+      'packages/*/*/presets/**/*.patch.yml',
     ], { cwd: root }).sort()
     for (const path of configPaths) {
       const source = await readFile(resolve(root, path), 'utf8')
@@ -353,7 +354,7 @@ class DesktopExecutableBuild {
       outfile: this.cli.target.output,
       target: this.cli.target.bunTarget,
       minify: true,
-      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin(), this.requireBuiltinPlugin()],
+      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin(), this.requireBuiltinPlugin(), this.openPlugin()],
       define: {
         DSH_DESKTOP_VERSION: JSON.stringify(version),
         'globalThis.DSH_DESKTOP_VERSION': JSON.stringify(version),
@@ -400,6 +401,29 @@ class DesktopExecutableBuild {
             '/** Require one Node builtin module from the compiled host. */',
             'export function requireBuiltin(id) { return hostRequire(id) }',
             'export default { requireBuiltin }',
+          ].join('\n'),
+          loader: 'js',
+        }))
+      },
+    }
+  }
+
+  /** Open an external URL through the platform launcher instead of the `open` npm package. */
+  private openPlugin(): BunBuildPlugin {
+    const namespace = 'dsh-desktop-open'
+    return {
+      name: 'dsh-desktop-open',
+      setup(builder) {
+        builder.onResolve({ filter: /^open$/ }, () => ({ path: 'open', namespace }))
+        builder.onLoad({ filter: /.*/, namespace }, () => ({
+          contents: [
+            "import { spawn } from 'node:child_process'",
+            '/** Open one URL with the desktop platform launcher. */',
+            'export default async function open(target) {',
+            "  const [command, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', target]]",
+            "    : process.platform === 'darwin' ? ['open', [target]] : ['xdg-open', [target]]",
+            "  spawn(command, args, { detached: true, stdio: 'ignore' }).unref()",
+            '}',
           ].join('\n'),
           loader: 'js',
         }))

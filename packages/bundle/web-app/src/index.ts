@@ -82,11 +82,15 @@ export const Config: z<Config> = z.object({
 /** Environment variable naming the advertised URL of this Web GUI. */
 const DSH_WEB_URL = 'DSH_WEB_URL' as const
 
-const BROWSER_OPENER_MODULE = import.meta.resolve('open')
-
-const BROWSER_OPENER_PROGRAM = `
+/**
+ * The opener program a launcher runs. Resolution stays inside the program text so a
+ * packaged host that never opens a browser does not resolve the module at load.
+ * @returns the `--eval` program handed to the platform opener.
+ */
+function browserOpenerProgram(): string {
+  return `
 try {
-  const { default: open } = await import(${JSON.stringify(BROWSER_OPENER_MODULE)})
+  const { default: open } = await import(${JSON.stringify(import.meta.resolve('open'))})
   const launcher = await open(process.argv[1])
   if (process.platform === 'win32') {
     // open resolves at PowerShell spawn; keep it referenced until that launcher hands the URL to Windows.
@@ -112,6 +116,7 @@ try {
   process.exitCode = 1
 }
 `
+}
 
 /**
  * Dist location is workspace knowledge of this bundle: anchored on the
@@ -119,8 +124,12 @@ try {
  * concern — the fallback owner reads files per request, so a composition
  * whose page never reaches the fallback seat (the static worker preview
  * ships its own page and carries no dist) boots without one.
+ * @param runtimePaths - packaged host resolver; absent when Node resolves packages.
  */
-function resolveDistIndex(): string {
+function resolveDistIndex(runtimePaths?: { resolvePackageJson(packageName: string): string }): string {
+  if (runtimePaths !== undefined) {
+    return join(dirname(runtimePaths.resolvePackageJson('@deepseek-ai/dsh-web-frontend')), 'dist', 'index.html')
+  }
   const require = createRequire(import.meta.url)
   try {
     return join(dirname(require.resolve('@deepseek-ai/dsh-web-frontend/package.json')), 'dist', 'index.html')
@@ -134,7 +143,7 @@ function resolveDistIndex(): string {
 function spawnBrowserLauncher(url: string): ChildProcess {
   return spawn(process.execPath, [
     '--input-type=module',
-    '--eval', BROWSER_OPENER_PROGRAM,
+    '--eval', browserOpenerProgram(),
     '--', url,
   ], {
     env: scrubbedParentEnv(),
@@ -173,7 +182,7 @@ async function openBrowser(url: string): Promise<void> {
 
 /** Test hooks for the built dist and native browser handoff; production never mutates them. */
 export const internals: {
-  resolveDistIndex: () => string
+  resolveDistIndex: (runtimePaths?: { resolvePackageJson(packageName: string): string }) => string
   openBrowser: (url: string) => Promise<void>
 } = { resolveDistIndex, openBrowser }
 
@@ -203,7 +212,7 @@ export function apply(ctx: Context, config: Config): void {
   /** The advertised root: the canonical `publicUrl`, or the listener's own origin. */
   const appRootUrl = (): string => publicUrl ?? ctx.webServer.getOrigin()
   ctx.provide('webApp', { getAdvertisedUrl: appRootUrl } satisfies WebApp)
-  ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
+  ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex(ctx.dshRuntimePaths) })
   if (config.surfaceContext) {
     ctx.inject(['shellEnv'], (runtimeCtx) => {
       runtimeCtx.shellEnv.register({

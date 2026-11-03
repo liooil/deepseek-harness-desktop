@@ -336,6 +336,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
       hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, options.environment)
       await hostCtx.plugin(PluginPackages, {
         resolution: composed.resolution,
+        ...(options.bareModuleImporter === undefined ? {} : { installInterception: false }),
       })
       // The command line and bounded exit request are launcher facts available
       // to every app plugin that injects the argument snapshot.

@@ -39,6 +39,8 @@ export interface PluginPackage {
 export interface PluginPackagesConfig {
   /** Complete package table; omit it to expose native package lookup only. */
   resolution?: RuntimeResolution
+  /** Install the Node resolver interception; a packaged host resolves plugins without it. */
+  installInterception?: boolean
 }
 
 function readPackage(dir: string, fallbackName: string): PluginPackage | undefined {
@@ -67,6 +69,7 @@ export class PluginPackages extends Service {
     super(ctx, 'pluginPackages')
     if (config.resolution === undefined) return
     this.current = config.resolution
+    if (config.installInterception === false) return
     const interception = installRuntimeInterception(config.resolution)
     this.disposeWorkerResolution = registerWorkerResolution(config.resolution)
     this.interception = interception

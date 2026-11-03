@@ -643,6 +643,29 @@ window.__ModuleLoader__={
  * already-loaded entries aggregates into one loud throw (FAILED fiber; the
  * boot activation audit reports it).
  */
+/**
+ * Read this package's version from its manifest.
+ *
+ * A single-file desktop executable compiles this module, so the relative
+ * `require` has no manifest to resolve; that build defines
+ * `globalThis.DSH_DESKTOP_VERSION` with the same released version.
+ * @returns the version of the client build served to browsers.
+ */
+/** Filesystem resolver a packaged single-process host supplies on its context. */
+interface PackagedRuntimePaths {
+  resolvePackageJson(packageName: string): string
+}
+
+function readOwnVersion(): { version: string } {
+  try {
+    return createRequire(import.meta.url)('../package.json') as { version: string }
+  } catch (error) {
+    const desktop = (globalThis as { DSH_DESKTOP_VERSION?: string }).DSH_DESKTOP_VERSION
+    if (typeof desktop === 'string') return { version: desktop }
+    throw error
+  }
+}
+
 export class ClientModuleRegistry extends Service {
   static inject = ['loader']
 
@@ -670,7 +693,7 @@ export class ClientModuleRegistry extends Service {
    */
   constructor(ctx: Context) {
     super(ctx, 'clientModules')
-    const { version } = createRequire(import.meta.url)('../package.json') as { version: string }
+    const { version } = readOwnVersion()
     // The client build fixes this read into the built Host artifact.
     const commit = process.env.DSH_CLIENT_COMMIT_HASH
     this.release = commit === undefined ? { version } : { version, commit }
@@ -933,6 +956,11 @@ export class ClientModuleRegistry extends Service {
     const pathLike = loaderName.startsWith('.') || loaderName.startsWith('file:') || isAbsolute(loaderName)
     const expectedPackageName = pathLike ? undefined : exactPackageSpecifier(loaderName)
     if (!pathLike && expectedPackageName === undefined) return undefined
+    if (expectedPackageName !== undefined) {
+      const packagedPaths = (this.ctx as Context & { dshRuntimePaths?: PackagedRuntimePaths }).dshRuntimePaths
+      const packaged = packagedPaths?.resolvePackageJson(expectedPackageName)
+      if (packaged !== undefined) return { path: packaged, packageName: expectedPackageName }
+    }
     const internal = this.ctx.loader.internal
     if (internal === undefined || typeof Reflect.get(internal, 'resolveSync') !== 'function') {
       if (expectedPackageName === undefined) {
