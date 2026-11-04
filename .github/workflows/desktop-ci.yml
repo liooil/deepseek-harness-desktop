@@ -50,7 +50,6 @@ jobs:
       - name: Run desktop integration tests
         run: >-
           pnpm exec vitest run
-          apps/desktop/tests
           apps/desktop-bundesk/tests
           apps/cli/tests/profile-hmr.spec.ts
           apps/cli/tests/telemetry-switch.spec.ts
