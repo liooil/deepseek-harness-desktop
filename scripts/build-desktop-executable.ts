@@ -270,6 +270,11 @@ class DesktopExecutableBuild {
       ),
       join('native', this.cli.target.platform === 'windows' ? 'rg.exe' : 'rg'),
     )
+    if (this.cli.target.platform !== 'windows') {
+      // The probe checks the extracted copy's execute bit; keep it on the staged file
+      // so the one-time copy preserves it.
+      await chmod(join(this.dshRoot, 'native', 'rg'), 0o755)
+    }
     await copyFrom(
       resolve(root, 'node_modules/.pnpm/node_modules', 'node-pty', 'prebuilds', `${sharpPlatform}-${this.cli.target.arch}`),
       join('native', 'node-pty'),
