@@ -10,6 +10,8 @@ import { detectImage } from '@deepseek-ai/dsh-attachment-local/src/image.ts'
 import { configureRipgrepPath, resolveRgPath } from '@deepseek-ai/dsh-tool-fs-search'
 import { dlopen, FFIType } from 'bun:ffi'
 import loadEmbeddedSharp from './generated/sharp-runtime.ts'
+import loadKoffi from './generated/koffi-runtime.ts'
+import loadNodePty from './generated/node-pty-runtime.ts'
 import {
   disposeEmbeddedNativeRuntime,
   type EmbeddedDshRuntime,
@@ -91,6 +93,22 @@ export function configureEmbeddedSharpRuntime(): void {
     prepareEmbeddedSharpRuntime()
     return loadEmbeddedSharp()
   })
+}
+
+/**
+ * Install the native addon loader the bundled node-pty package calls.
+ * The package derives its addon path at runtime, which a compiled executable
+ * cannot resolve; the host materializes the embedded addon and loads it by an
+ * ordinary filesystem path.
+ */
+export function configureEmbeddedNodePtyRuntime(): void {
+  const runtime = embeddedRuntime
+  if (runtime === undefined) return
+  const nativeRequire = createRequire(import.meta.url)
+  ;(globalThis as { __dshNodePtyNative?: (name: string) => unknown }).__dshNodePtyNative = name =>
+    nativeRequire(materializeEmbeddedNativePathSync(runtime, join('native', 'node-pty', `${name}.node`)))
+  configureLazyRequire('node-pty', loadNodePty)
+  configureLazyRequire('koffi', loadKoffi)
 }
 
 function prepareEmbeddedSharpRuntime(): void {

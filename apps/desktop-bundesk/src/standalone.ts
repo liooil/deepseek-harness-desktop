@@ -11,7 +11,11 @@ if (process.env.DSH_PTC_RUNTIME_NODE === '1') {
   const bundesk = await import('bundesk')
   const { importDesktopPlugin } = await import('./generated/plugin-registry.ts')
   const { runDesktop } = await import('./bin.ts')
-  const { configureEmbeddedDshRuntime, configureEmbeddedSharpRuntime } = await import('./dsh-web.ts')
+  const {
+    configureEmbeddedDshRuntime,
+    configureEmbeddedNodePtyRuntime,
+    configureEmbeddedSharpRuntime,
+  } = await import('./dsh-web.ts')
   const { extractEmbeddedDshRuntime } = await import('./embedded-runtime.ts')
   const { configureBundeskRuntime } = await import('./window.ts')
 
@@ -21,6 +25,7 @@ if (process.env.DSH_PTC_RUNTIME_NODE === '1') {
     root: join(import.meta.dir, 'dsh'),
     version: DSH_DESKTOP_VERSION,
   }), importDesktopPlugin)
+  configureEmbeddedNodePtyRuntime()
 
   try {
     await runDesktop(Bun.argv.slice(2))

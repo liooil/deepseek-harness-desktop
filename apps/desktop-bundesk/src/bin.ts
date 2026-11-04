@@ -106,7 +106,9 @@ export async function runDesktop(argv: string[]): Promise<void> {
     } finally {
       await web.stop()
     }
-    return
+    // The verification opened native and child-process handles whose teardown
+    // order the OS does not settle; the one-shot run ends with its verdict.
+    process.exit(0)
   }
 
   console.info(`dsh-desktop: opening ${options.provider} window`)

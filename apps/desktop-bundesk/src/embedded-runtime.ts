@@ -89,15 +89,22 @@ export function materializeEmbeddedNativePathSync(
 export async function disposeEmbeddedNativeRuntime(): Promise<void> {
   const extracted = extractedRuntimeRoot
   extractedRuntimeRoot = undefined
-  if (extracted !== undefined) await rm(extracted, { recursive: true, force: true, maxRetries: 3 })
+  if (extracted !== undefined) await removeRuntimeDirectory(extracted)
   const root = nativeRoot
   nativeRoot = undefined
-  if (root === undefined) return
+  if (root !== undefined) await removeRuntimeDirectory(root)
+}
+
+/**
+ * Remove one process-owned temporary runtime directory.
+ * @param path - directory this process created.
+ */
+async function removeRuntimeDirectory(path: string): Promise<void> {
   try {
-    await rm(root, { recursive: true, force: true, maxRetries: 3 })
+    await rm(path, { recursive: true, force: true, maxRetries: 3 })
   } catch (error) {
-    // Windows keeps loaded DLLs locked until process teardown; only that host
-    // lock can survive cleanup of this process-owned temporary directory.
+    // Windows keeps loaded DLLs and mapped assets locked until process teardown;
+    // only that host lock can survive cleanup of a process-owned directory.
     const code = (error as NodeJS.ErrnoException).code
     if (process.platform === 'win32' && (code === 'EPERM' || code === 'EBUSY')) return
     throw error

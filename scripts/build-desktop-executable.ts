@@ -44,7 +44,7 @@ interface BunPluginBuilder {
   ): void
   onResolve(
     options: { filter: RegExp; namespace?: string },
-    resolve: () => { path: string; namespace?: string },
+    resolve: (args: { importer: string }) => { path: string; namespace?: string } | undefined,
   ): void
 }
 
@@ -142,6 +142,8 @@ class DesktopExecutableBuild {
     await this.discoverRuntimeClosure()
     await this.generatePluginRegistry()
     await this.generateSharpRuntime()
+    await this.generateNodePtyRuntime()
+    await this.generateKoffiRuntime()
     await this.stageRuntimeData()
     await this.compile()
   }
@@ -164,6 +166,49 @@ class DesktopExecutableBuild {
       '',
     ].join('\n'))
     console.log(`build-desktop-executable: generated native sharp entry for ${platform}-${this.cli.target.arch}`)
+  }
+
+  /**
+   * Emit the koffi factory the desktop registers on the host lazy-require seam.
+   * The Ffi binding has no TypeScript face here, so the loader returns the
+   * package's own export value unchanged.
+   */
+  private async generateKoffiRuntime(): Promise<void> {
+    const koffiRoot = resolve(root, 'node_modules/.pnpm/node_modules', 'koffi')
+    if (!existsSync(koffiRoot)) throw new Error(`build-desktop-executable: missing koffi at ${koffiRoot}`)
+    await mkdir(GENERATED_DIR, { recursive: true })
+    await writeFile(join(GENERATED_DIR, 'koffi-runtime.ts'), [
+      '/** Load the bundled koffi binding; its native addon ships inside the executable. */',
+      'declare const require: (specifier: string) => unknown',
+      '',
+      'export default function loadKoffi(): unknown {',
+      `  const loaded = require(${JSON.stringify(koffiRoot)}) as { default?: unknown }`,
+      '  return loaded.default ?? loaded',
+      '}',
+      '',
+    ].join('\n'))
+    console.log('build-desktop-executable: generated native koffi entry')
+  }
+
+  /**
+   * Emit the node-pty factory the desktop registers on the host lazy-require seam.
+   * The bundled package resolves its addon through the host hook installed beside
+   * this loader, so the require stays lazy and the addon loads on first use.
+   */
+  private async generateNodePtyRuntime(): Promise<void> {
+    await mkdir(GENERATED_DIR, { recursive: true })
+    const nodePtyRoot = resolve(root, 'node_modules/.pnpm/node_modules', 'node-pty')
+    if (!existsSync(nodePtyRoot)) throw new Error(`build-desktop-executable: missing node-pty at ${nodePtyRoot}`)
+    await writeFile(join(GENERATED_DIR, 'node-pty-runtime.ts'), [
+      '/** Load the bundled node-pty package; the desktop materializes its native addon first. */',
+      'declare const require: (specifier: string) => unknown',
+      '',
+      'export default function loadNodePty(): typeof import(\'node-pty\') {',
+      `  return require(${JSON.stringify(nodePtyRoot)}) as typeof import('node-pty')`,
+      '}',
+      '',
+    ].join('\n'))
+    console.log('build-desktop-executable: generated native node-pty entry')
   }
 
   /**
@@ -224,6 +269,10 @@ class DesktopExecutableBuild {
         this.cli.target.platform === 'windows' ? 'rg.exe' : 'rg',
       ),
       join('native', this.cli.target.platform === 'windows' ? 'rg.exe' : 'rg'),
+    )
+    await copyFrom(
+      resolve(root, 'node_modules/.pnpm/node_modules', 'node-pty', 'prebuilds', `${sharpPlatform}-${this.cli.target.arch}`),
+      join('native', 'node-pty'),
     )
 
     const files = await listFiles(this.stagingRoot)
@@ -354,7 +403,7 @@ class DesktopExecutableBuild {
       outfile: this.cli.target.output,
       target: this.cli.target.bunTarget,
       minify: true,
-      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin(), this.requireBuiltinPlugin(), this.openPlugin()],
+      plugins: [this.nodeSeaPlugin(), this.sharpBindingPlugin(), this.koffiBindingPlugin(), this.requireBuiltinPlugin(), this.openPlugin(), this.nodePtyBindingPlugin()],
       define: {
         DSH_DESKTOP_VERSION: JSON.stringify(version),
         'globalThis.DSH_DESKTOP_VERSION': JSON.stringify(version),
@@ -423,6 +472,38 @@ class DesktopExecutableBuild {
             "  const [command, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', target]]",
             "    : process.platform === 'darwin' ? ['open', [target]] : ['xdg-open', [target]]",
             "  spawn(command, args, { detached: true, stdio: 'ignore' }).unref()",
+            '}',
+          ].join('\n'),
+          loader: 'js',
+        }))
+      },
+    }
+  }
+
+  /**
+   * Replace node-pty's runtime-computed native loader: a compiled executable
+   * cannot require the addon by a path the package derives at runtime, so the
+   * host materializes the embedded copy and hands the module back here.
+   */
+  private nodePtyBindingPlugin(): BunBuildPlugin {
+    const namespace = 'dsh-desktop-node-pty'
+    return {
+      name: 'dsh-desktop-node-pty',
+      setup(builder) {
+        builder.onResolve({ filter: /^\.\/utils(?:\.js)?$/ }, args =>
+          args.importer.includes('node-pty') ? { path: 'node-pty-utils', namespace } : undefined)
+        builder.onLoad({ filter: /.*/, namespace }, () => ({
+          contents: [
+            '/** Copy one own-property set, as node-pty expects. */',
+            'export function assign(target, ...sources) {',
+            '  for (const source of sources) for (const key of Object.keys(source)) target[key] = source[key]',
+            '  return target',
+            '}',
+            '/** Load one embedded native addon through the packaged host. */',
+            'export function loadNativeModule(name) {',
+            '  const load = globalThis.__dshNodePtyNative',
+            "  if (typeof load !== 'function') throw new Error('node-pty: the packaged host supplies no native addon loader')",
+            "  return { dir: 'native/node-pty', module: load(name) }",
             '}',
           ].join('\n'),
           loader: 'js',

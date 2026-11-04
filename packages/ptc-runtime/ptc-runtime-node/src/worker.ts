@@ -1,5 +1,6 @@
 /** Managed Node process shared by temporary and owner-retained evaluations. */
 import { AsyncLocalStorage } from 'node:async_hooks'
+import type { Readable } from 'node:stream'
 import { Context } from '@deepseek-ai/cordis'
 import type { PtcRunSpec, PtcRunResult, PtcRunSandbox, PtcRunFailure, PtcBindingNamespace, PtcJsonValue } from '@deepseek-ai/dsh-ptc-runtime'
 import { SandboxUnavailableError, classifyRunnerFailure, isRunnerSpawnFailure } from '@deepseek-ai/dsh-sandbox'
@@ -17,6 +18,7 @@ import { decodePtcJsonWire } from './json-wire.ts'
 import { OutputLedger } from './output-ledger.ts'
 import { drainOutput, terminateProcess } from './output-stream.ts'
 import { readProgramResult, type ProgramBootData, type ProgramMethods, type HostMethods } from './protocol.ts'
+import { isBunRuntime, PTC_STDIO_CONTROL_ENV, stdioControlChannel } from './stdio-channel.ts'
 
 const messageOf = (error: unknown): string => error instanceof Error ? error.message : String(error)
 
@@ -241,6 +243,9 @@ export class ProgramWorker {
     const executable = await this.ctx.subprocess.resolveExecutable(this.config.launch.executable, undefined, this.controller.signal)
     if (this.closed) return
     const packaged = this.config.launch.kind === 'embedded'
+    // A Bun host cannot hand a child an extra inherited descriptor, so a packaged Bun
+    // host carries the control frames over the child's standard streams instead.
+    const stdioControl = packaged && isBunRuntime()
     const heapFlag = `--max-old-space-size=${this.config.maxOldGenerationSizeMb}`
     const argv = [executable, ...packaged ? [] : [heapFlag],
       ...bootstrapArgs(this.ctx.fs, this.config.launch, this.config.maxMessageBytes, this.retainsState)]
@@ -253,12 +258,31 @@ export class ProgramWorker {
       .map(key => [key, undefined]))
     if (packaged) {
       env.DSH_PTC_RUNTIME_NODE = '1'
-      env.NODE_OPTIONS = heapFlag
+      if (stdioControl) {
+        env[PTC_STDIO_CONTROL_ENV] = '1'
+        env.BUN_JSC_forceRAMSize = String(this.config.maxOldGenerationSizeMb * 1024 * 1024)
+      } else {
+        env.NODE_OPTIONS = heapFlag
+      }
     }
-    const handle = this.ctx.subprocess.spawn({ argv: this.confined?.argv ?? argv, cwd, env, stdio: { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', control: 'pipe' }, graceMs: this.config.graceMs })
+    const handle = this.ctx.subprocess.spawn({
+      argv: this.confined?.argv ?? argv,
+      cwd,
+      env,
+      stdio: stdioControl
+        ? { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' }
+        : { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', control: 'pipe' },
+      graceMs: this.config.graceMs,
+    })
     this.handle = handle
-    if (!handle.control || !handle.stdout || !handle.stderr) throw new Error('subprocess provider did not supply the requested control and output pipes')
-    for (const stream of [handle.stdout, handle.stderr]) {
+    const control = stdioControl
+      ? handle.stdin === undefined || handle.stdout === undefined
+        ? undefined
+        : stdioControlChannel(handle.stdout, handle.stdin)
+      : handle.control
+    if (control === undefined || handle.stderr === undefined) throw new Error('subprocess provider did not supply the requested control and output pipes')
+    const outputStreams = stdioControl ? [handle.stderr] : [handle.stdout, handle.stderr].filter((stream): stream is Readable => stream !== undefined)
+    for (const stream of outputStreams) {
       stream.setEncoding('utf8')
       stream.on('data', (text: string) => {
         if (stream === handle.stderr) this.stderr = (this.stderr + text).slice(-this.config.maxOutputBytes)
@@ -268,7 +292,7 @@ export class ProgramWorker {
     }
     // A rejected wire call closes its endpoint before birpc can answer it.
     const refuse = (message: string): never => { this.fail('protocol', message); throw new Error(message) }
-    this.channel = createProcessRpc<ProgramMethods, HostMethods>(handle.control, this.config.maxMessageBytes, {
+    this.channel = createProcessRpc<ProgramMethods, HostMethods>(control, this.config.maxMessageBytes, {
       ready: () => {
         if (this.ready || !this.active) { this.fail('protocol', 'duplicate program readiness'); return }
         this.ready = true
@@ -316,7 +340,10 @@ export class ProgramWorker {
     })
     void handle.done.then(async (outcome) => {
       this.exitOutcome = outcome
-      await Promise.all([drainOutput(handle.stdout, this.config.graceMs), drainOutput(handle.stderr, this.config.graceMs)])
+      await Promise.all([
+        ...stdioControl ? [] : [drainOutput(handle.stdout, this.config.graceMs)],
+        drainOutput(handle.stderr, this.config.graceMs),
+      ])
       // The RPC result can already be queued when process exit arrives.
       setImmediate(() => {
         if (!this.closed) this.fail(this.confined !== undefined && classifyRunnerFailure(outcome.exitCode, this.stderr, this.confined.runnerFailureRules) !== undefined ? 'sandbox-unavailable' : 'worker-exit', this.exitMessage(outcome))
