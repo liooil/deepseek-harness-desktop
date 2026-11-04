@@ -71,9 +71,7 @@ export function bootstrapArgs(fs: Pick<FileSystem, 'processPathFromHostPath'>, c
   switch (config.kind) {
     case 'embedded':
       if (persistent) throw new Error('Persistent PTC requires a node-script launch')
-      // A pkg child precedes the limit with its bundle path; Bun's child argv has
-      // no script slot, so a placeholder keeps the limit at the entry's argv[2].
-      return isBunHost() ? ['dsh-ptc', String(maxMessageBytes)] : [String(maxMessageBytes)]
+      return [String(maxMessageBytes)]
     case 'node-script': return scriptBootstrapArgs(fs, config.bootstrapPath, maxMessageBytes)
     /* v8 ignore next -- Callers supply the resolved, closed LaunchConfig union. */
     default: return assertNever(config)
