@@ -39,6 +39,7 @@ export async function extractEmbeddedDshRuntime(runtime: EmbeddedDshRuntime): Pr
   if (extractedRuntimeRoot === undefined) {
     const root = mkdtempSync(join(tmpdir(), `dsh-desktop-runtime-${process.pid}-`))
     copyRuntimeEntry(runtime.root, root, false)
+    markRuntimeExecutables(root)
     extractedRuntimeRoot = root
   }
   return { root: extractedRuntimeRoot, version: runtime.version }
@@ -108,6 +109,23 @@ async function removeRuntimeDirectory(path: string): Promise<void> {
     const code = (error as NodeJS.ErrnoException).code
     if (process.platform === 'win32' && (code === 'EPERM' || code === 'EBUSY')) return
     throw error
+  }
+}
+
+/** Runtime assets the host executes directly, relative to the extracted root. */
+const RUNNABLE_RUNTIME_ASSETS = ['native/rg'] as const
+
+/**
+ * Restore the execute bit on embedded runners. Bun's virtual filesystem reports
+ * every embedded file as non-executable, so the extraction copy cannot infer it
+ * from the source mode.
+ * @param root - extracted runtime root.
+ */
+function markRuntimeExecutables(root: string): void {
+  if (process.platform === 'win32') return
+  for (const relativePath of RUNNABLE_RUNTIME_ASSETS) {
+    const path = join(root, relativePath)
+    if (existsSync(path)) chmodSync(path, 0o700)
   }
 }
 
