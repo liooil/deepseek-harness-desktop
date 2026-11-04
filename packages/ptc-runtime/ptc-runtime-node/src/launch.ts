@@ -19,13 +19,39 @@ export type LaunchConfig = {
   executable: string
 }
 
+/** A single-file executable host that re-runs itself as the program child. */
+interface StandaloneHost {
+  /** Bun's compiled-executable flag, absent before it was added. */
+  isStandaloneExecutable?: boolean
+  /** Files Bun embedded into a compiled executable; empty in an interpreted host. */
+  embeddedFiles?: readonly unknown[]
+}
+
+/**
+ * Whether this process is a single-file executable that carries its own program child:
+ * a `pkg`-packaged Node binary or a compiled Bun standalone.
+ * @returns true when the executable itself carries the program bootstrap.
+ */
+function isPackagedHost(): boolean {
+  const bun = (globalThis as { Bun?: StandaloneHost }).Bun
+  return 'pkg' in process || bun?.isStandaloneExecutable === true || (bun?.embeddedFiles?.length ?? 0) > 0
+}
+
+/**
+ * Whether this process runs under Bun rather than Node.
+ * @returns true when the runtime executes under Bun.
+ */
+function isBunHost(): boolean {
+  return (globalThis as { Bun?: unknown }).Bun !== undefined
+}
+
 /**
  * Resolve the local carrier default or validate an explicit execution-world invocation.
  * @param config - explicit remote or local worker configuration; omitted selects this carrier.
  * @returns the worker invocation without guessing from the execution world's paths.
  */
 export function resolveLaunch(config?: LaunchConfig): LaunchConfig {
-  const launch: LaunchConfig = config ?? { kind: 'pkg' in process ? 'embedded' : 'node-script', executable: process.execPath }
+  const launch: LaunchConfig = config ?? { kind: isPackagedHost() ? 'embedded' : 'node-script', executable: process.execPath }
   if (launch.executable.length === 0) throw new Error('ptc-runtime-node: launch.executable must be non-empty')
   if (launch.kind === 'node-script' && launch.bootstrapPath !== undefined && !isAbsolute(launch.bootstrapPath)) {
     throw new Error('ptc-runtime-node: launch.bootstrapPath must be absolute')
@@ -45,7 +71,9 @@ export function bootstrapArgs(fs: Pick<FileSystem, 'processPathFromHostPath'>, c
   switch (config.kind) {
     case 'embedded':
       if (persistent) throw new Error('Persistent PTC requires a node-script launch')
-      return [String(maxMessageBytes)]
+      // A pkg child precedes the limit with its bundle path; Bun's child argv has
+      // no script slot, so a placeholder keeps the limit at the entry's argv[2].
+      return isBunHost() ? ['dsh-ptc', String(maxMessageBytes)] : [String(maxMessageBytes)]
     case 'node-script': return scriptBootstrapArgs(fs, config.bootstrapPath, maxMessageBytes)
     /* v8 ignore next -- Callers supply the resolved, closed LaunchConfig union. */
     default: return assertNever(config)

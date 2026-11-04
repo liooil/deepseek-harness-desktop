@@ -3,10 +3,12 @@ import { join } from 'node:path'
 declare const DSH_DESKTOP_VERSION: string
 
 if (process.env.DSH_PTC_RUNTIME_NODE === '1') {
-  // A compiled executable is its own program child: the PTC runtime re-runs this binary
-  // with only the frame limit, whose entry reads `process.argv[2]`. Load that entry alone
+  // A compiled executable is its own program child: the PTC runtime re-runs this
+  // binary with the frame limit as its last argument. Load the program entry alone
   // so the child never initializes the desktop shell.
-  await import('@deepseek-ai/dsh-ptc-runtime-node/process')
+  const { openInheritedControlChannel } = await import('@deepseek-ai/dsh-subprocess/control')
+  const { runNodeMain } = await import('@deepseek-ai/dsh-ptc-runtime-node/process')
+  await runNodeMain(openInheritedControlChannel(), Number(process.argv.at(-1)), process)
 } else {
   const bundesk = await import('bundesk')
   const { importDesktopPlugin } = await import('./generated/plugin-registry.ts')

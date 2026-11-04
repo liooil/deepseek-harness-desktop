@@ -208,9 +208,14 @@ export async function startDshWeb(options: { cwd: string; port: number }): Promi
     async verifyRuntime() {
       const runtime = ctx.get('ptcRuntime')
       if (runtime === undefined) throw new Error('desktop smoke: ptcRuntime service is unavailable')
+      // The verification program only proves the packed evaluator starts; a
+      // confinement backend is neither required nor guaranteed on every host
+      // that runs the product, so the smoke leaves it unconfined.
       const codeResult = await runtime.run(runtime.resolve({
         program: 'const answer: number = 6 * 7; return answer',
         bindings: [],
+        cwd: options.cwd,
+        sandboxPolicy: { mode: 'danger-full-access', workspaceRoot: options.cwd },
       }))
       if (codeResult.error !== undefined || codeResult.value !== 42) {
         throw new Error(`desktop smoke: PTC program failed (${codeResult.error?.message ?? String(codeResult.value)})`)
