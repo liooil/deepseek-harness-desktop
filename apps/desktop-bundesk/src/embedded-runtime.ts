@@ -140,9 +140,12 @@ function copyRuntimeEntry(source: string, destination: string, executable: boole
     return
   }
   if (!sourceStat.isFile()) throw new Error(`dsh-desktop: embedded native asset is not a regular file: ${source}`)
+  // Bun's virtual filesystem reports the staged mode; a staged runner keeps it so
+  // the extracted copy stays executable on hosts that check the permission bit.
+  const runnable = executable || (sourceStat.mode & 0o111) !== 0
   mkdirSync(dirname(destination), { recursive: true, mode: 0o700 })
   if (!existsSync(destination)) {
-    writeFileSync(destination, readFileSync(source), { mode: executable ? 0o700 : 0o600 })
+    writeFileSync(destination, readFileSync(source), { mode: runnable ? 0o700 : 0o600 })
   }
-  if (executable && process.platform !== 'win32') chmodSync(destination, 0o700)
+  if (runnable && process.platform !== 'win32') chmodSync(destination, 0o700)
 }
