@@ -38,14 +38,6 @@ function isPackagedHost(): boolean {
 }
 
 /**
- * Whether this process runs under Bun rather than Node.
- * @returns true when the runtime executes under Bun.
- */
-function isBunHost(): boolean {
-  return (globalThis as { Bun?: unknown }).Bun !== undefined
-}
-
-/**
  * Resolve the local carrier default or validate an explicit execution-world invocation.
  * @param config - explicit remote or local worker configuration; omitted selects this carrier.
  * @returns the worker invocation without guessing from the execution world's paths.
